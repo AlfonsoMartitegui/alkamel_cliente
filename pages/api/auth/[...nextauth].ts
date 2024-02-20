@@ -1,75 +1,174 @@
 import NextAuth from "next-auth/next";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { PrismaClient } from "@prisma/client";
 
 export default NextAuth({
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
-  callbacks: {
-    redirect({ url, baseUrl }) {
-      if (url.startsWith(baseUrl)) {
-        return url;
-      } else if (url.startsWith("/")) {
-        return new URL(url, baseUrl).toString();
-      }
-      return baseUrl;
-    },
-    session: async ({ session, token }) => {
-      if (session?.user) {
-        session.user.id = token.uid;
-        session.user.role = token.role;
-      }
-      return session;
-    },
-    jwt: async ({ user, token }) => {
-      if (user) {
-        token.uid = user.id.substring(0, user.id.indexOf("-"));
-        token.role = user.id.substring(user.id.indexOf("-") + 1);
-      }
-      return token;
-    },
-  },
+
   secret: "bf1ff71da99074ee8a466a35394fc4f9",
+
+  // CREA LA AUTENTIFICACION
   providers: [
     CredentialsProvider({
       name: "Credentials",
-      // The credentials is used to generate a suitable form on the sign in page.
-      // You can specify whatever fields you are expecting to be submitted.
-      // e.g. domain, username, password, 2FA token, etc.
-      // You can pass any HTML attribute to the <input> tag through the object.
       credentials: {
-        username: { label: "Username", type: "text", placeholder: "jsmith" },
+        email: { label: "Email", type: "text", placeholder: "jsmith" },
         password: { label: "Password", type: "password" },
       },
-      //async authorize(credentials, req) {
-      async authorize(credentials) {
-        console.log("AUTHORIZING????");
-        if (
-          credentials?.password === "Lot23.r" &&
-          credentials.username === "rViewer@alkamelsystems.com"
-        ) {
-          return {
-            id: "1-rc_viewer",
-            name: "RC. Viewer",
-            email: credentials.username,
-            role: "rc_viewer",
-          };
-        } else if (
-          credentials?.password === "Lot23.r" &&
-          credentials.username === "rOperator@alkamelsystems.com"
-        ) {
-          return {
-            id: "2-rc_operator",
-            name: "RC Operator",
-            email: credentials.username,
-            role: "rc_operator",
-          };
-        } else throw new Error("Invalid password");
+
+      async authorize(credentials, req) {
+        // CONECCION A BBDD
+        const prisma = new PrismaClient();
+
+        // BUSCAR EL EMAIL DEL USUARIO Y HACER LA COMPROBACION DE LA CONTRASEÑA
+        const fetchUser = await prisma.user.findFirst({
+          where: {
+            email: credentials?.email,
+          },
+          select: {
+            // Selecciona los campos que necesitas de la tabla user
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            password: true,
+            active: true,
+            // Añade los campos de la tabla user_global_role
+            user_global_role: {
+              select: {
+                user_id: true,
+                role_id: true,
+                // Añade los campos de la tabla role
+                role: {
+                  select: {
+                    id: true,
+                    name: true,
+                    tag_type: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const serializedFetchedUser = {
+          id: Number(fetchUser?.id).toString(),
+          email: fetchUser?.email,
+          firstName: fetchUser?.firstName,
+          lastName: fetchUser?.lastName,
+          password: fetchUser?.password,
+          active: fetchUser?.active,
+          roleid: Number(fetchUser?.user_global_role[0].role_id),
+          role: fetchUser?.user_global_role[0].role.name,
+        };
+
+        let promoterid = null;
+        let promotername = '';
+        let apitoken = '';
+
+        if (serializedFetchedUser.roleid === 1 || serializedFetchedUser.roleid === 2 || serializedFetchedUser.roleid === 3) {
+          const fetchPromoter = await prisma.promoter_user.findFirst({
+            where: {
+              user_id: Number(serializedFetchedUser.id),
+            },
+            select: {
+              promoter: {
+                select: {
+                  id: true,
+                  name: true,
+                  promoter_user:{
+                    select: {
+                      api_token: true,
+                    }
+                  }
+                },
+              },
+            },
+          });
+
+          promoterid = Number(fetchPromoter?.promoter.id);
+          promotername = fetchPromoter?.promoter.name!;
+          apitoken = fetchPromoter?.promoter.promoter_user[0].api_token!;
+        }
+
+        const serializedUser = {
+          id: Number(fetchUser?.id).toString(),
+          email: fetchUser?.email,
+          firstName: fetchUser?.firstName,
+          lastName: fetchUser?.lastName,
+          password: fetchUser?.password,
+          active: fetchUser?.active,
+          roleid: Number(fetchUser?.user_global_role[0].role_id),
+          role: fetchUser?.user_global_role[0].role.name,
+          promoterid: promoterid,
+          promotername: promotername,
+          apitoken: apitoken,
+        };
+
+        const user = serializedUser;
+
+        if (!user) {
+          prisma.$disconnect();
+          throw new Error("No user found!");
+        }
+
+        // COMPARAR LA CONTRASEÑA Y LA CONTRASEÑA ENCRIPTADA CON EL METODO COMPARE DE bcryptjs
+        // const isValid = await verifyPassword(
+        //   credentials.password,
+        //   user.password
+        // );
+
+        // if (!isValid) {
+        //   client.close();
+        //   throw new Error("Could not log you in!");
+        // }
+
+        const isValid = credentials?.password === user.password;
+        if (!isValid) {
+          prisma.$disconnect();
+          throw new Error("Could not log you in!");
+        }
+
+        prisma.$disconnect();
+
+        // DEVOLVER LA INFORMACION DEL USUARIO
+        console.log("Este es el usuario serializado: ", serializedUser);
+
+       return user;
       },
     }),
   ],
+  callbacks:{
+    async jwt({ token, user }: any) {
+      // console.log('Este es el user: ', user);
+      // Añade nuevo campo al token de la session si se ha obtenido el user
+      if (user) {
+        token.userProfile = {
+          id: Number(user.id),
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          roleid: user.roleid,
+          role: user.role,
+          active: user.active,
+          promoterid: user.promoterid,
+          promoter: user.promotername,
+          apitoken: user.apitoken,
+        }        
+      }
+      // console.log('ESTE ES EL TOKEN: ', token);
+      // console.log('ESTE ES EL TOKEN.TEST: ', token.profile);
+      return token;
+    },
+    async session({ session, token }: any) {
+      // Manda los datos del token a la session
+      if(token){
+        session.userProfile = token.userProfile;
+      }
+      return session;
+    },
+  },
 });

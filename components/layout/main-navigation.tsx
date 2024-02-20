@@ -1,19 +1,29 @@
 import { Button } from "react-bootstrap";
 import Link from "next/link";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Navbar, Nav, Container, Row, Col } from "react-bootstrap";
-import Clock from "react-live-clock";
+// import Clock from "react-live-clock";
 import { useSession } from "next-auth/react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/router";
 import Image from "next/image";
+import Clock from "./clock";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser } from "@fortawesome/free-solid-svg-icons";
+import { faKey } from "@fortawesome/free-solid-svg-icons";
+import { config } from '@fortawesome/fontawesome-svg-core';
+import '@fortawesome/fontawesome-svg-core/styles.css';
+import Dropdown from "react-bootstrap/Dropdown";
 
 // interface mainNavigationProps {
 //   timeZone: string;
 // }
 
+config.autoAddCss = false;
+
 const MainNavigation: React.FC<{ timeZone: string }> = ({ timeZone }) => {
   const session = useSession();
+  const userProfile = session.data?.userProfile;
   const router = useRouter();
   //const { data: session, status } = useSession();
   console.log("SESSION??? ", session);
@@ -57,12 +67,15 @@ const MainNavigation: React.FC<{ timeZone: string }> = ({ timeZone }) => {
                     className="my-0 py-0"
                   />
                 </Col>
-                <Col className="fs-2 fw-bolder text-center text-white">
+                {/* <Col className="fs-2 fw-bolder text-center text-white">
                   <Clock
                     format={"HH:mm:ss"}
                     ticking={true}
                     timezone={timeZone}
                   />
+                </Col> */}
+                <Col className="fs-2 fw-bolder text-center text-white">
+                  <Clock />
                 </Col>
               </Row>
             </Navbar.Brand>
@@ -99,12 +112,15 @@ const MainNavigation: React.FC<{ timeZone: string }> = ({ timeZone }) => {
                     className="my-0"
                   />
                 </Col>
-                <Col className="fs-2 fw-bolder text-center text-white">
+                {/* <Col className="fs-2 fw-bolder text-center text-white">
                   <Clock
                     format={"HH:mm:ss"}
                     ticking={true}
                     timezone={timeZone}
                   />
+                </Col> */}
+                <Col className="fs-2 fw-bolder text-center text-white">
+                  <Clock />
                 </Col>
               </Row>
             </Navbar.Brand>
@@ -113,7 +129,7 @@ const MainNavigation: React.FC<{ timeZone: string }> = ({ timeZone }) => {
               <Nav className="ms-auto">
                 {/*<Link href="/">
                   <a className="nav-link active">Home</a>
-    </Link>*/}
+                </Link>*/}
                 {session.status === "authenticated" && (
                   <Link href="/user">
                     <a className="nav-link disabled">
@@ -139,7 +155,7 @@ const MainNavigation: React.FC<{ timeZone: string }> = ({ timeZone }) => {
                       <a className="nav-link fw-bold">Training Reports</a>
                     </Link>
                   )}
-                {session.status === "authenticated" ? (
+                {/* {session.status === "authenticated" ? (
                   <Button
                     style={{ backgroundColor: "#d02020", border: "0px" }}
                     className="fw-bold btn-sm"
@@ -147,6 +163,50 @@ const MainNavigation: React.FC<{ timeZone: string }> = ({ timeZone }) => {
                   >
                     Logout
                   </Button>
+                ) : (
+                  <Link href="/login">
+                    <a className="nav-link">Login</a>
+                  </Link>
+                )} */}
+                {session.status === "authenticated" ? (
+                  <Dropdown drop="start">
+                    <Dropdown.Toggle variant="success" id="dropdown-basic">
+                      <FontAwesomeIcon icon={faUser} />
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                      <Dropdown.Item>
+                        <Link href="/user">
+                          <a className="nav-link disabled text-dark">
+                            {userProfile?.firstName +
+                              " " +
+                              userProfile?.lastName}
+                          </a>
+                        </Link>
+                      </Dropdown.Item>
+                      <Dropdown.Item>
+                        <Link href="/user">
+                          <a className="nav-link disabled text-dark">
+                            {userProfile?.role}
+                          </a>
+                        </Link>
+                      </Dropdown.Item>
+                      <Dropdown.Item>
+                        <Link href="/getApiToken">
+                          <a className="nav-link disabled text-dark">
+                            API Token{" "}
+                            <FontAwesomeIcon icon={faKey} />
+                          </a>
+                        </Link>
+                      </Dropdown.Item>
+                      <Dropdown.Item
+                        onClick={() => signOut()}
+                        className="text-dark"
+                      >
+                        Logout
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
                 ) : (
                   <Link href="/login">
                     <a className="nav-link">Login</a>

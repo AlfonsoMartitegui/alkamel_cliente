@@ -399,13 +399,16 @@ model pptracker {
   pptracker_type_id             Int?
   pptracker_firmware_version_id BigInt?
   pptracker_firmware_versions   pptracker_firmware_versions?   @relation(fields: [pptracker_firmware_version_id], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "pptracker_firmware_id")
+  pptracker_type                pptracker_type?                @relation(fields: [pptracker_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "pptracker_type_id")
   participant_current_pptracker participant_current_pptracker?
   participant_has_pptracker     participant_has_pptracker[]
   pptracker_gps_log_entry       pptracker_gps_log_entry[]
   pptracker_message_ack         pptracker_message_ack[]
+  pptracker_shortcodes          pptracker_shortcodes[]
   pptrackeralert                pptrackeralert[]
 
   @@index([pptracker_firmware_version_id], map: "pptracker_firmware_id_idx")
+  @@index([pptracker_type_id], map: "pptracker_type_id_idx")
 }
 
 model pptracker_gps_log_entry {
@@ -473,9 +476,9 @@ model promoter {
   slug                       String?                      @db.VarChar(255)
   website_url                String?                      @db.VarChar(255)
   active                     Int?                         @default(0) @db.TinyInt
-  logo                       String?                      @db.VarChar(255)
   event                      event[]
   promoter_has_championships promoter_has_championships[]
+  promoter_has_pptracker     promoter_has_pptracker[]
   promoter_user              promoter_user[]
 }
 
@@ -496,7 +499,7 @@ model promoter_user {
   active             Int?                 @default(0) @db.TinyInt
   api_token          String               @db.VarChar(145)
   promoter           promoter             @relation(fields: [promoter_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_promoter_has_user_promoter1")
-  user               user                 @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_promooter_has_user")
+  user               user                 @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_promooter_has_user")
   promoter_user_role promoter_user_role[]
 
   @@id([promoter_id, user_id])
@@ -528,6 +531,7 @@ model rally {
   season_id                      BigInt?
   closed                         Int                      @default(0) @db.TinyInt
   rally_kml_file                 String                   @default("track.kml") @db.VarChar(255)
+  rally_rc_kml_file              String?                  @default("track_rc.kml") @db.VarChar(245)
   tiny_pos_frequency             Int                      @default(1) @db.SmallInt
   tiny_sos_frequency             Int                      @default(3) @db.SmallInt
   tiny_flags_frequency           Int                      @default(3) @db.SmallInt
@@ -545,9 +549,14 @@ model rally {
   show_waypoints_on_viewers      Int?                     @default(0) @db.TinyInt
   allow_red_flag                 Int?                     @default(1) @db.TinyInt
   tiny_incidences_frequency      Int                      @default(10) @db.SmallInt
+  alert_icons_id                 BigInt
+  waypoints_icons_id             BigInt
+  waypoint_icons_width           Int
+  alert_icon_set                 alert_icon_set           @relation(fields: [alert_icons_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_alert_icons")
   event                          event                    @relation(fields: [event_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rally_event")
   rally_type_rallyTorally_type   rally_type               @relation(fields: [rally_type], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rally_type")
   season                         season?                  @relation(fields: [season_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rally_season1")
+  waypoint_icon_set              waypoint_icon_set        @relation(fields: [waypoints_icons_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_waypoints_icons")
   backtrack_alert                backtrack_alert[]
   event_has_rallies              event_has_rallies[]
   flag_log_entry                 flag_log_entry[]
@@ -561,9 +570,11 @@ model rally {
   time_control                   time_control[]
   track                          track[]
 
+  @@index([alert_icons_id], map: "fk_alert_icons_idx")
   @@index([event_id], map: "fk_rally_event1_idx")
   @@index([season_id], map: "fk_rally_season1_idx")
   @@index([rally_type], map: "fk_rally_type_idx")
+  @@index([waypoints_icons_id], map: "fk_waypoints_icons_idx")
 }
 
 model role {
@@ -793,7 +804,7 @@ model user_global_role {
   user_id BigInt
   role_id Int
   role    role   @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_has_role_role1")
-  user    user   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_global_role_user")
+  user    user   @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_user_global_role_user")
 
   @@id([user_id, role_id])
   @@index([role_id], map: "fk_user_has_role_role1_idx")
@@ -952,16 +963,19 @@ model training_windows {
 }
 
 model waypoint_types {
-  id                  BigInt            @id
-  name                String            @db.VarChar(255)
-  name_en             String            @db.VarChar(255)
-  name_es             String            @db.VarChar(255)
-  default_inner_radio Int               @default(20)
-  default_outer_radio Int               @default(100)
-  default_apperture   Int               @default(0)
-  default_mandatory   Int               @default(1)
-  track_waypoints     track_waypoints[]
-  waypoint            waypoint[]
+  id                       BigInt                    @id
+  name                     String                    @db.VarChar(255)
+  name_en                  String                    @db.VarChar(255)
+  name_es                  String                    @db.VarChar(255)
+  default_inner_radio      Int                       @default(20)
+  default_outer_radio      Int                       @default(100)
+  default_apperture        BigInt?                   @default(0)
+  default_mandatory        Int                       @default(1)
+  waypoint_apperture_types waypoint_apperture_types? @relation(fields: [default_apperture], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_waypoint_apperture")
+  track_waypoints          track_waypoints[]
+  waypoint                 waypoint[]
+
+  @@index([default_apperture], map: "fk_waypoint_apperture_idx")
 }
 
 model participant_current_pptracker {
@@ -975,23 +989,26 @@ model participant_current_pptracker {
 }
 
 model pptracker_type {
-  id   Int     @id @default(autoincrement())
-  name String? @db.VarChar(45)
+  id        Int         @id @default(autoincrement())
+  name      String?     @db.VarChar(45)
+  pptracker pptracker[]
 }
 
 model pptracker_firmware_versions {
-  id                 BigInt      @id @default(autoincrement())
-  version            String      @unique(map: "version_UNIQUE") @db.VarChar(145)
-  url                String      @db.Text
-  is_default_version Boolean     @default(false)
-  pptracker          pptracker[]
-
-  @@index([is_default_version], map: "is_default_version_idx")
+  id                   BigInt                 @id @default(autoincrement())
+  version              String                 @unique(map: "version_UNIQUE") @db.VarChar(145)
+  parts                Int                    @default(0)
+  application_settings application_settings[]
+  pptracker            pptracker[]
 }
 
 model pptracker_shortcodes {
-  id           String @id @db.VarChar(45)
-  pptracker_id BigInt @unique(map: "pptracker_id_UNIQUE")
+  id                     String                  @id @db.VarChar(45)
+  pptracker_id           BigInt
+  pptracker              pptracker               @relation(fields: [pptracker_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pptracker")
+  promoter_has_pptracker promoter_has_pptracker?
+
+  @@index([pptracker_id], map: "fk_pptracker_idx")
 }
 
 model participant_categories {
@@ -1077,4 +1094,85 @@ model stop_zones {
 
   @@index([track_id], map: "fk_sz_track_id_idx")
   @@index([track_waypoints_id], map: "fk_sz_track_waypoints_id_idx")
+}
+
+model alert_icon_set {
+  id                   BigInt                 @id @default(autoincrement())
+  name                 String                 @default("") @db.VarChar(245)
+  application_settings application_settings[]
+  rally                rally[]
+}
+
+model alert_types {
+  id   BigInt @id @default(autoincrement())
+  name String @db.VarChar(245)
+}
+
+model application_settings {
+  id                          Int                          @id @default(autoincrement())
+  pptracker_firmware_id       BigInt?                      @default(0)
+  alert_icons_id              BigInt?                      @default(0)
+  waypoints_icons_id          BigInt?                      @default(0)
+  waypoint_icons_width        Int                          @default(20)
+  message_set_id              BigInt?                      @default(0)
+  s3_acces_key                String                       @default("") @db.VarChar(245)
+  s3_secret_key               String                       @default("") @db.VarChar(245)
+  s3_bucket_name              String                       @default("") @db.VarChar(245)
+  s3_public_path              String                       @default("") @db.VarChar(245)
+  s3_raw_tracks_folder        String                       @default("") @db.VarChar(245)
+  s3_rally_kml_folder         String                       @default("") @db.VarChar(245)
+  s3_rc_kml_folder            String                       @default("") @db.VarChar(245)
+  s3_firmware_folder          String                       @default("") @db.VarChar(245)
+  s3_waypoint_icons_folder    String                       @default("") @db.VarChar(245)
+  s3_alert_icons_folder       String                       @default("") @db.VarChar(245)
+  s3_promoter_assets_folder   String                       @default("") @db.VarChar(245)
+  alert_icon_set              alert_icon_set?              @relation(fields: [alert_icons_id], references: [id], onUpdate: NoAction, map: "fk_alert_icon_set_id")
+  message_set                 message_set?                 @relation(fields: [message_set_id], references: [id], onUpdate: NoAction, map: "fk_message_id")
+  pptracker_firmware_versions pptracker_firmware_versions? @relation(fields: [pptracker_firmware_id], references: [id], onUpdate: NoAction, map: "firmware_id")
+  waypoint_icon_set           waypoint_icon_set?           @relation(fields: [waypoints_icons_id], references: [id], onUpdate: NoAction, map: "fk_waypoint_icon_set_id")
+
+  @@index([pptracker_firmware_id], map: "firmware_id_idx")
+  @@index([alert_icons_id], map: "fk_alert_icon_set_id_idx")
+  @@index([waypoints_icons_id], map: "fk_waypoint_icon_set_id_idx")
+  @@index([message_set_id], map: "message_id_idx2")
+}
+
+model message_set {
+  id                   BigInt                 @id @default(autoincrement())
+  name                 String                 @default("") @db.VarChar(245)
+  application_settings application_settings[]
+  messages             messages[]
+}
+
+model messages {
+  id             BigInt      @id @default(autoincrement())
+  message_set_id BigInt
+  message_text   String      @default("") @db.VarChar(254)
+  response_type  Int         @default(0) @db.TinyInt
+  message_set    message_set @relation(fields: [message_set_id], references: [id], onDelete: Cascade, map: "fk_message_set")
+
+  @@index([message_set_id], map: "fk_message_set_idx")
+}
+
+model promoter_has_pptracker {
+  promoter_id          BigInt
+  pptracker_id         BigInt               @id
+  pptracker_shortcodes pptracker_shortcodes @relation(fields: [pptracker_id], references: [pptracker_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pptracker_id")
+  promoter             promoter             @relation(fields: [promoter_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "pptracker_promoter")
+
+  @@index([pptracker_id], map: "fk_pptracker_id_idx")
+  @@index([promoter_id], map: "pptracker_promoter_idx")
+}
+
+model waypoint_apperture_types {
+  id             BigInt           @id @default(autoincrement())
+  name           String           @default("") @db.VarChar(245)
+  waypoint_types waypoint_types[]
+}
+
+model waypoint_icon_set {
+  id                   BigInt                 @id @default(autoincrement())
+  name                 String                 @default("") @db.VarChar(245)
+  application_settings application_settings[]
+  rally                rally[]
 }
