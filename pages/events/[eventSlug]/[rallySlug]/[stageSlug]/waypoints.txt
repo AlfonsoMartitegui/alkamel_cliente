@@ -1,0 +1,538 @@
+import type { NextPage, GetServerSideProps } from "next";
+import Head from "next/head";
+import { getSession } from "next-auth/react";
+import { Container, Row, Col } from "react-bootstrap";
+import CSS from "csstype";
+import { Wrapper, Status } from "@googlemaps/react-wrapper";
+import React, { useEffect, useState, useRef, Fragment } from "react";
+import { participant, track_waypoints } from "@prisma/client";
+import {
+  eventInfo,
+  ppTrackerClient,
+  rallyInfo,
+  participantInfo,
+} from "server/ppTrackerdataServerIoClient";
+import {
+  apiPositionRecord,
+  positionRecordsRequestQuery,
+} from "server/shared/socket_io_packets";
+import CurrentEventBar from "components/events/currentEventBar";
+import ParticipantMarker from "components/maps/ParticipantMarker";
+import WaypointMarker from "components/maps/WaypointMarker";
+import RequestQueryFormComponent from "components/events/Replay/requestQueryFormComponent";
+import ReplayEntryBar from "components/events/Replay/ReplayBar";
+import ParticipantReplayDetails, {
+  pathDetails,
+} from "components/events/Replay/participantReplayDetails";
+import ReplayMap from "components/maps/ReplayMap";
+
+interface WaypointsProps {
+  loggedIn: boolean;
+  currentEvent: string;
+  currentRallySlug: string;
+  currentEventSlug: string;
+  currentStageSlug: string;
+  rallies: string;
+}
+
+export interface pathDetailsToShowInTheReplay {
+  lastTimeChange: number;
+  pathDetails: Map<number, pathDetails>;
+  replayData: apiPositionRecord[];
+}
+
+const verticalDivider: CSS.Properties = {
+  borderRight: "1px solid #777",
+};
+
+const Waypoints: NextPage<WaypointsProps> = (props) => {
+
+    const [activeEvent, setActiveEvent] = React.useState<eventInfo | undefined>(
+      undefined
+    );
+    const [rally, setRally] = React.useState<rallyInfo | undefined>(undefined);
+    const [participants, setParticipants] = React.useState<participantInfo[]>(
+      []
+    );
+  
+
+  useEffect(() => {
+    ppTrackerClient.start();
+    ppTrackerClient.on("activeEvents", () => onActiveEvents());
+    //ppTrackerClient.on("positions", (rallyId) => onPositions(rallyId));
+    ppTrackerClient.on("participants", (rallyId) =>
+      onParticipantsUpdate(rallyId)
+    );
+    
+  }, []);
+
+  const onActiveEvents = (): void => {
+    //console.log("RECEIVING ACTIVE EVENTS!!");
+
+    if (ppTrackerClient.activeEventsBySlug.has(props.currentEventSlug)) {
+      //LOAD CURRENT EVENT INFO
+      const activeEvent = ppTrackerClient.activeEventsBySlug.get(
+        props.currentEventSlug
+      );
+      //console.log("EVENT SLUG IS FOUND!!");
+      setActiveEvent(activeEvent);
+
+      if (activeEvent && activeEvent.rallies.length > 0) {
+        const r = activeEvent.rallies[0];
+        setRally(r);
+        setParticipants(r.participants);
+      }
+    } else {
+      
+    }
+  };
+
+  const onParticipantsUpdate = (rallyId: number): void => {
+    const hiddenRallyId = document.getElementById(
+      "currentRallyId"
+    ) as HTMLInputElement;
+
+    if (rallyId === Number(hiddenRallyId.value)) {
+      // console.log(
+      //   new Date().toTimeString(),
+      //   "OK !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! >>>>>>>>>>>>>>>>>>>>>>> PARTICIPANTS UPDATE FROM RALLY ",
+      //   rallyId,
+      //   hiddenRallyId.value
+      // );
+
+      let partId = 0;
+
+      const currentParticipantId = document.getElementById(
+        "currentParticipantId"
+      ) as HTMLInputElement;
+      partId =
+        currentParticipantId !== null ? Number(currentParticipantId.value) : 0;
+
+      // const currentOfficialCarId = document.getElementById(
+      //   "currentOfficialCarId"
+      // ) as HTMLInputElement;
+      // officialId =
+      //   currentOfficialCarId !== null ? Number(currentOfficialCarId.value) : 0;
+
+      //console.log("current partId / officialId: ", partId, officialId);
+
+      let participants: participantInfo[] = [];
+      const pMap = ppTrackerClient.rallyParticipantsById.get(rallyId);
+      if (pMap) {
+        for (var pInfo of pMap.values()) {
+          participants.push(pInfo);
+          if (partId === Number(pInfo.id)) {
+            setCurrentParticipantInfo(pInfo);
+            //set Participant Details Info Object
+          }
+        }
+      }
+      setParticipants(participants);
+    } else {
+      // console.log(
+      //   ">>>>>>>>>> INVALID >>>>>>>>>>>>>>>>>>> PARTICIPANTS UPDATE FROM RALLY ",
+      //   rallyId,
+      //   hiddenRallyId.value
+      // );
+    }
+  };
+
+
+
+  const onChangeRallyClick = () => {
+    if (activeEvent && activeEvent.rallies.length > 2) {
+      //TODO: Show Dialog to choose which rally is going to be selected
+    } else if (activeEvent) {
+      //Only 2 rallies, change automatically to the "second" rally.
+      setRally(activeEvent.rallies[1]);
+    }
+  };
+
+  const findParticipantInfoForId = (participantId: BigInt | undefined) => {
+    if (participantId === undefined) {
+      return undefined;
+    }
+    for (var p of participants) {
+      if (p.id === participantId) return p;
+    }
+    return undefined;
+  };
+
+  const onNewQueryClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    console.log("NEW QUERY REQUEST:", e.currentTarget);
+    setShowRequestForm(true);
+  };
+
+  const onParticipantClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    //console.log(e.currentTarget.getAttribute("id"));
+    //console.log(e.currentTarget);
+    if (e.currentTarget.getAttribute("id")) {
+      const p = e.currentTarget.getAttribute("id")!;
+      //console.log(p);
+      setShowParticipantDetails(true);
+      const part = ppTrackerClient.getRallyParticipantWithNumber(
+        Number(rally?.id),
+        p
+      );
+      setSelectedParticipant(part);
+      setCurrentParticipantInfo(findParticipantInfoForId(part?.id));
+      centerMapOnParticipantNumber(p);
+    }
+  };
+
+  const onParticipantMarkerClick = (id: number) => {
+    //console.log("CLICK FROM MAIN>> ON PARTICIPANT ID: ", id);
+    const part = ppTrackerClient.rallyParticipantsById
+      .get(Number(rally?.id))
+      ?.get(id);
+    if (part !== undefined) {
+      if (showParticipantDetails === false) {
+        setShowParticipantDetails(true);
+      }
+      setSelectedParticipant(part);
+      setCurrentParticipantInfo(findParticipantInfoForId(part?.id));
+      //centerMapOnParticipantNumber(p);
+    }
+  };
+
+  const centerMapOnParticipantNumber = (participantNumber: string) => {
+    if (rally) {
+      const participant = ppTrackerClient.getRallyParticipantWithNumber(
+        Number(rally.id),
+        participantNumber
+      );
+      if (participant) {
+        centerMapOnParticipantId(Number(participant.id));
+      }
+    }
+  };
+
+  const centerMapOnParticipantId = (participantId: number) => {
+    if (replayRecordByParticipant.has(participantId)) {
+      //console.log("CENTER On PARTICIPANT ID: ", participantId);
+      const apiPosition = replayRecordByParticipant.get(participantId);
+
+      if (apiPosition === undefined) return;
+
+      //console.log("current Pos:", apiPosition);
+      const newPos = { lat: apiPosition.lat, lng: apiPosition.lon };
+      setCenter(newPos);
+      setWaypointsForStage(apiPosition.stage_id);
+      if (zoom < 18) {
+        setZoom(17);
+      } else if (zoom > 14) {
+        setZoom(17);
+      }
+    }
+  };
+
+  const setWaypointsForStage = (stageId: number) => {
+    const stage = ppTrackerClient.getRallyStageWithId(
+      Number(rally?.id),
+      stageId
+    );
+
+    if (stage) {
+      let wpoints = rally?.waypoints.filter(
+        (w) => w.track_id === stage?.track_id
+      );
+      if (wpoints) {
+        setWaypoints(wpoints);
+      } else {
+        setWaypoints([]);
+      }
+    } else {
+      setWaypoints([]);
+    }
+  };
+
+  const onParticipantHide = () => {
+    setShowParticipantDetails(false);
+  };
+
+  const onParticipantCenterMap = () => {
+    const participantId = document.getElementById(
+      "currentParticipantId"
+    ) as HTMLInputElement;
+    centerMapOnParticipantId(Number(participantId.value));
+  };
+
+  const render = (status: Status) => {
+    return <h1>{status}</h1>;
+  };
+
+  ///////////////////////////////////////////////////////////////////////////////////////////
+  //#region MAPS DATA & STATES
+  ///////////////////////////////////////////////////////////////////////////////////////////
+
+  const [zoom, setZoom] = React.useState(15); // initial zoom
+  const [center, setCenter] = React.useState<google.maps.LatLngLiteral | null>({
+    lat: 0,
+    lng: 0,
+  });
+
+  const zoomChanged = (m: google.maps.Map) => {
+    //console.log("zoom change", m.getZoom());
+    const z = m.getZoom();
+    if (z) {
+      setZoom(z);
+    }
+  };
+
+  //#endregion
+
+  //#region Replay Path Details Managament
+
+  const [pathDetailsMap, setPathDetailsMap] = React.useState<
+    Map<number, pathDetails>
+  >(new Map<number, pathDetails>());
+
+  const [replayPathDetails, setReplayPathDetails] =
+    React.useState<pathDetailsToShowInTheReplay>({
+      lastTimeChange: 0,
+      pathDetails: new Map<number, pathDetails>(),
+      replayData: [],
+    });
+
+  const onPathDetailsChanged = (pathDetails: pathDetails) => {
+    const partId = getCurrentParticipantId();
+    let pathsMap = pathDetailsMap;
+    pathsMap.set(partId, pathDetails);
+    setPathDetailsMap(pathsMap);
+    console.log("NEW PATH DETAILS???", pathDetails, partId);
+    setReplayPathDetails({
+      lastTimeChange: new Date().getTime(),
+      pathDetails: pathsMap,
+      replayData: replayData,
+    });
+  };
+
+  //#endregion
+
+  //#region Support functions
+  const getCurrentParticipantId = () => {
+    const participantId = document.getElementById(
+      "currentParticipantId"
+    ) as HTMLInputElement;
+    let partId = Number(participantId.value);
+    return isNaN(partId) ? 0 : partId;
+  };
+  //#endregion
+
+  useEffect(() => {
+    updateMapSize();
+  }, [showEntryListBar, showItineraryBar, showOfficialCarsBar]);
+
+  return (
+    <Fragment>
+      <Head>
+        <title>PP Tracker</title>
+        <meta
+          name="description"
+          content="PP Tracker: Tracking for rally competitors. Power up by Al Kamel Systems S.L."
+        />
+        <link rel="icon" href="/favicon.png" />
+      </Head>
+      <main>
+        <input
+          type="hidden"
+          id="currentRallyId"
+          value={rally ? rally.id.toString() : "0"}
+        ></input>
+        <Container fluid style={{ height: "100%" }}>
+          <CurrentEventBar
+            userIsAdmin={props.loggedIn}
+            event={activeEvent}
+            rally={rally}
+            onChangeRallyClick={onChangeRallyClick}
+            showEntryListButton={showEntryListBar}
+            onShowEntryListButton={onShowEntryListBar}
+            showItineraryButton={false}
+            onShowItineraryButton={onShowItineraryBar}
+            showOfficialCarButton={false}
+            onShowOfficalCarBarButton={onShowOfficarCarBarButton}
+            onNewMessageClick={onShowNewMessage}
+            showChangeRallyButton={
+              activeEvent ? activeEvent.rallies.length > 0 : false
+            }
+            noAlerts
+            noNewMessage
+            noOfficialCars
+          />
+          {showEntryListBar ? (
+            <ReplayEntryBar
+              replayData={replayData}
+              replayQuery={replayQuery}
+              ev={activeEvent}
+              rally={rally}
+              participants={participants}
+              onParticipantClick={onParticipantClick}
+              onNewQueryClick={onNewQueryClick}
+              onReplayTime={onReplayTime}
+            />
+          ) : (
+            ""
+          )}
+          <Row id="mainRowContent" ref={mainContent}>
+            {showParticipantDetails ? (
+              <Col className="col-auto" style={verticalDivider}>
+                <ParticipantReplayDetails
+                  onPathDetails={onPathDetailsChanged}
+                  ev={activeEvent}
+                  participantInfo={currentParticipantInfo}
+                  position={replayRecordByParticipant.get(
+                    Number(currentParticipantInfo?.id)
+                  )}
+                  countriesById={ppTrackerClient.countriesById}
+                  participant={selectedParticipant}
+                  onHide={onParticipantHide}
+                  onCenter={onParticipantCenterMap}
+                  userIsAdmin={props.loggedIn}
+                  rally={rally}
+                  ppTrackerClient={ppTrackerClient}
+                  pathDetails={
+                    currentParticipantInfo &&
+                    pathDetailsMap.has(Number(currentParticipantInfo.id))
+                      ? pathDetailsMap.get(Number(currentParticipantInfo.id))
+                      : undefined
+                  }
+                />
+              </Col>
+            ) : (
+              ""
+            )}
+            <Col id="mapColumn" style={verticalDivider} className="p-0">
+              <Wrapper
+                apiKey={"AIzaSyDv1JFAcNTizcqhVQE2jCN6sd7T0R2_vyc"}
+                render={render}
+              >
+                <ReplayMap
+                  kmlTrack={trackKmlLayer}
+                  centerTo={center}
+                  zoom={zoom}
+                  scaleControl={true}
+                  style={{
+                    height: "100%", //mapHeight.toString() + "px",
+                  }}
+                  zoomChanged={zoomChanged}
+                  //centerChanged={centerChanged}
+                  //dragStart={onDragStart}
+                  //style={{ flexGrow: "1", width: "100%", height: "100%" }}
+                  replayPathDetails={replayPathDetails}
+                >
+                  {waypoints.map((w) => (
+                    <WaypointMarker
+                      opacity={0.75}
+                      zIndex={100 - Number(w.waypoint_type_id)}
+                      key={w.id.toString()}
+                      icon={waypointMarkerIcon}
+                      position={{
+                        lat: w.lat / 10000000,
+                        lng: w.lon / 10000000,
+                      }}
+                      title={w.name}
+                      label={{
+                        fontSize: "18px",
+                        color: "#000",
+                        fontWeight: "bold",
+                        text: w.name,
+                      }}
+                    />
+                  ))}
+                  {participants
+                    .filter(
+                      (p) =>
+                        replayRecordByParticipant.has(Number(p.id)) &&
+                        replayRecordByParticipant.get(Number(p.id)) !==
+                          undefined
+                    )
+                    .map((p) => (
+                      <ParticipantMarker
+                        participantId={Number(p.id)}
+                        onParticipantClick={onParticipantMarkerClick}
+                        zIndex={
+                          currentParticipantInfo !== undefined &&
+                          currentParticipantInfo.id === p.id
+                            ? 1500
+                            : 1000
+                        }
+                        key={Number(p.id)}
+                        icon={getParticipantMarkerIconByStatus(p, rally)}
+                        position={{
+                          lat: replayRecordByParticipant.has(Number(p.id))
+                            ? (
+                                replayRecordByParticipant.get(
+                                  Number(p.id)
+                                ) as apiPositionRecord
+                              ).lat
+                            : 0,
+                          lng: replayRecordByParticipant.has(Number(p.id))
+                            ? (
+                                replayRecordByParticipant.get(
+                                  Number(p.id)
+                                ) as apiPositionRecord
+                              ).lon
+                            : 0,
+                        }}
+                        title={p.number}
+                        label={{
+                          fontSize: "18px",
+                          color: getParticipantMarkerTextColorByStatus(
+                            p,
+                            rally
+                          ),
+                          fontWeight: "bold",
+                          text: p.number,
+                        }}
+                      />
+                    ))}
+                </ReplayMap>
+              </Wrapper>
+            </Col>
+          </Row>
+        </Container>
+        {rally !== undefined &&
+          (showRequestForm || replayQuery === undefined) && (
+            <RequestQueryFormComponent
+              ev={activeEvent}
+              query={replayQuery}
+              onRequestData={onRequestData}
+              onHide={onHideNewMessage}
+              participants={rally.participants}
+              stages={rally?.stages}
+              ppTrackerClient={ppTrackerClient}
+              rallyId={rally ? rally.id : 0n}
+            />
+          )}
+      </main>
+
+      <footer></footer>
+    </Fragment>
+  );
+};
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const evSlug: string = context.query.eventSlug as string;
+  const rallySlug: string =
+    "rally" in context.query ? (context.query.rally as string) : "";
+  const stageSlug: string =
+    "stage" in context.query ? (context.query.stage as string) : "";
+
+  console.log(">> REPLAY QUERY: ", context.query);
+
+  const { req } = context;
+  const session = await getSession({ req });
+
+  return {
+    props: {
+      loggedIn: session ? true : false,
+      currentEventSlug: evSlug,
+      currentEvent: "",
+      currentRallySlug: rallySlug,
+      stageSlug: stageSlug,
+      rallies: "",
+    },
+  };
+};
+
+export default Waypoints;

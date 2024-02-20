@@ -1,0 +1,1080 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model backtrack_alert {
+  id                BigInt         @id
+  alert_type        String?        @db.VarChar(45)
+  rally_id          BigInt
+  participant_id    BigInt
+  start_gps_point   String?        @db.VarChar(45)
+  end_gps_point     String?        @db.VarChar(45)
+  state             String?        @db.VarChar(45)
+  backtrack_path    String?        @db.VarChar(45)
+  start_time        DateTime?      @db.DateTime(0)
+  end_time          DateTime?      @db.DateTime(0)
+  ppTrackerAlert_id BigInt
+  participant       participant    @relation(fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_backtrack_alert_participant1")
+  pptrackeralert    pptrackeralert @relation(fields: [ppTrackerAlert_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_backtrack_alert_ppTrackerAlert1")
+  rally             rally          @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_backtrack_alert_rally1")
+
+  @@index([participant_id], map: "fk_backtrack_alert_participant1_idx")
+  @@index([ppTrackerAlert_id], map: "fk_backtrack_alert_ppTrackerAlert1_idx")
+  @@index([rally_id], map: "fk_backtrack_alert_rally1_idx")
+}
+
+model blue_flag_procedure {
+  id                                                                                      BigInt         @id
+  ppTrackerAlert_id                                                                       BigInt
+  participant_id                                                                          BigInt
+  blue_flag_participant_id                                                                BigInt
+  blue_flag_received                                                                      Int?           @db.TinyInt
+  blue_flag_received_ppTrackerAlert_id                                                    BigInt
+  blue_flag_accepted                                                                      Int?           @db.TinyInt
+  blue_flag_accepted_ppTrackerAlert_id                                                    BigInt
+  pptrackeralert_blue_flag_procedure_blue_flag_accepted_ppTrackerAlert_idTopptrackeralert pptrackeralert @relation("blue_flag_procedure_blue_flag_accepted_ppTrackerAlert_idTopptrackeralert", fields: [blue_flag_accepted_ppTrackerAlert_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_blue_flag_procedure_ppTrackerAlert2")
+  participant_blue_flag_procedure_blue_flag_participant_idToparticipant                   participant    @relation("blue_flag_procedure_blue_flag_participant_idToparticipant", fields: [blue_flag_participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_blue_flag_procedure_participant1")
+  pptrackeralert_blue_flag_procedure_blue_flag_received_ppTrackerAlert_idTopptrackeralert pptrackeralert @relation("blue_flag_procedure_blue_flag_received_ppTrackerAlert_idTopptrackeralert", fields: [blue_flag_received_ppTrackerAlert_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_blue_flag_procedure_ppTrackerAlert1")
+  participant_blue_flag_procedure_participant_idToparticipant                             participant    @relation("blue_flag_procedure_participant_idToparticipant", fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_missing_checkpoint_participant101")
+  pptrackeralert_blue_flag_procedure_ppTrackerAlert_idTopptrackeralert                    pptrackeralert @relation("blue_flag_procedure_ppTrackerAlert_idTopptrackeralert", fields: [ppTrackerAlert_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_missing_checkpoint_ppTrackerAlert101")
+
+  @@index([blue_flag_participant_id], map: "fk_blue_flag_procedure_participant1_idx")
+  @@index([blue_flag_received_ppTrackerAlert_id], map: "fk_blue_flag_procedure_ppTrackerAlert1_idx")
+  @@index([blue_flag_accepted_ppTrackerAlert_id], map: "fk_blue_flag_procedure_ppTrackerAlert2_idx")
+  @@index([participant_id], map: "fk_missing_checkpoint_participant1_idx")
+  @@index([ppTrackerAlert_id], map: "fk_missing_checkpoint_ppTrackerAlert1_idx")
+}
+
+model championship {
+  id                         BigInt                       @id @default(autoincrement())
+  name                       String                       @db.VarChar(255)
+  slug                       String                       @db.VarChar(255)
+  website_url                String                       @db.VarChar(255)
+  logo                       String                       @db.VarChar(255)
+  promoter_has_championships promoter_has_championships[]
+  season                     season[]
+  tag                        tag[]
+}
+
+model codriver {
+  id                 BigInt  @id
+  person_id          BigInt
+  license_country_id BigInt
+  country            country @relation(fields: [license_country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_codriver_country1")
+  person             person  @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_codriver_person1")
+
+  @@index([license_country_id], map: "fk_codriver_country1_idx")
+  @@index([person_id], map: "fk_codriver_person1_idx")
+}
+
+model country {
+  id                                            BigInt         @id @default(autoincrement())
+  name_en                                       String         @db.VarChar(255)
+  name_es                                       String         @db.VarChar(255)
+  name_ar                                       String         @db.VarChar(255)
+  name_cn                                       String         @db.VarChar(255)
+  name_fr                                       String         @db.VarChar(255)
+  name_ru                                       String         @db.VarChar(255)
+  iso_alpha2_code                               String         @db.VarChar(2)
+  iso_alpha3_code                               String         @db.VarChar(3)
+  ioc_code                                      String         @db.VarChar(3)
+  top_level_domain                              String         @db.VarChar(45)
+  codriver                                      codriver[]
+  driver                                        driver[]
+  event                                         event[]
+  manufacturer                                  manufacturer[]
+  person_countryToperson_born_country_id        person[]       @relation("countryToperson_born_country_id")
+  person_countryToperson_nationality_country_id person[]       @relation("countryToperson_nationality_country_id")
+  team                                          team[]
+}
+
+model driver {
+  id                 BigInt  @id
+  person_id          BigInt
+  license_country_id BigInt
+  country            country @relation(fields: [license_country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_driver_country1")
+  person             person  @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_driver_person1")
+
+  @@index([license_country_id], map: "fk_driver_country1_idx")
+  @@index([person_id], map: "fk_driver_person1_idx")
+}
+
+model event {
+  id                             BigInt              @id
+  name                           String              @db.VarChar(255)
+  slug                           String              @db.VarChar(255)
+  start_date                     BigInt
+  end_date                       BigInt
+  country_id                     BigInt
+  base_location                  String              @db.VarChar(255)
+  time_zone                      String              @db.VarChar(255)
+  surface                        String              @db.VarChar(255)
+  website_url                    String              @db.VarChar(255)
+  logo                           String?             @db.VarChar(255)
+  active                         Int                 @default(0) @db.TinyInt
+  public                         Int                 @default(0) @db.TinyInt
+  login_required_for_public_view Int                 @default(1) @db.TinyInt
+  promoter_id                    BigInt
+  closed                         Int                 @default(0) @db.TinyInt
+  offsetGMT                      Int                 @default(0)
+  country                        country             @relation(fields: [country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_country1")
+  promoter                       promoter            @relation(fields: [promoter_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_promoter1")
+  event_has_rallies              event_has_rallies[]
+  rally                          rally[]
+
+  @@index([country_id], map: "fk_event_country1_idx")
+  @@index([promoter_id], map: "fk_event_promoter1_idx")
+}
+
+model event_has_rallies {
+  event_id BigInt
+  rally_id BigInt
+  event    event  @relation(fields: [event_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_has_rally_event")
+  rally    rally  @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_has_rally_rally1")
+
+  @@id([event_id, rally_id])
+  @@index([event_id], map: "fk_event_has_rally_event1_idx")
+  @@index([rally_id], map: "fk_event_has_rally_rally1_idx")
+}
+
+model flag_log_entry {
+  id               BigInt             @id
+  flag             String?            @db.VarChar(45)
+  stage_id         BigInt
+  rally_id         BigInt
+  time             BigInt?
+  rally            rally              @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flag_log_entry_rally1")
+  stage            stage              @relation(fields: [stage_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flag_log_entry_stage1")
+  flag_message_ack flag_message_ack[]
+
+  @@index([rally_id], map: "fk_flag_log_entry_rally1_idx")
+  @@index([stage_id], map: "fk_flag_log_entry_stage1_idx")
+}
+
+model flag_message_ack {
+  id                       BigInt                @id @default(autoincrement())
+  flag_log_entry_id        BigInt
+  participant_id           BigInt
+  ppTracker_message_ack_id BigInt
+  flag_log_entry           flag_log_entry        @relation(fields: [flag_log_entry_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flag_message_ack_flag_log_entry1")
+  participant              participant           @relation(fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flag_message_ack_participant1")
+  pptracker_message_ack    pptracker_message_ack @relation(fields: [ppTracker_message_ack_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flag_message_ack_ppTracker_message_ack1")
+
+  @@index([flag_log_entry_id], map: "fk_flag_message_ack_flag_log_entry1_idx")
+  @@index([participant_id], map: "fk_flag_message_ack_participant1_idx")
+  @@index([ppTracker_message_ack_id], map: "fk_flag_message_ack_ppTracker_message_ack1_idx")
+}
+
+model info_message {
+  id               BigInt    @id
+  string           String?   @db.VarChar(255)
+  text_color       String?   @db.VarChar(45)
+  background_color String?   @db.VarChar(45)
+  blinking         Int?      @default(0) @db.TinyInt
+  dateTime         DateTime? @db.DateTime(0)
+  active           Int?      @db.TinyInt
+  logOnly          Int?      @db.TinyInt
+  rally_id         BigInt
+  rally            rally     @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_info_message_rally1")
+
+  @@index([rally_id], map: "fk_info_message_rally1_idx")
+}
+
+model leg {
+  id                                                     BigInt       @id
+  idx                                                    Int?
+  name                                                   String?      @db.VarChar(255)
+  rally_id                                               BigInt
+  first_time_control_id                                  BigInt
+  results_time_control_id                                BigInt
+  state                                                  String?      @db.VarChar(45)
+  time_control_leg_first_time_control_idTotime_control   time_control @relation("leg_first_time_control_idTotime_control", fields: [first_time_control_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_leg_time_control1")
+  rally                                                  rally        @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_leg_rally1")
+  time_control_leg_results_time_control_idTotime_control time_control @relation("leg_results_time_control_idTotime_control", fields: [results_time_control_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_leg_time_control2")
+  section                                                section[]
+
+  @@index([rally_id], map: "fk_leg_rally1_idx")
+  @@index([first_time_control_id], map: "fk_leg_time_control1_idx")
+  @@index([results_time_control_id], map: "fk_leg_time_control2_idx")
+}
+
+model manufacturer {
+  id         BigInt    @id
+  name       String?   @db.VarChar(255)
+  country_id BigInt
+  country    country   @relation(fields: [country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_team_country1")
+  vehicle    vehicle[]
+
+  @@index([country_id], map: "fk_team_country1_idx")
+}
+
+model mechanic_alert {
+  id                BigInt         @id
+  ppTrackerAlert_id BigInt
+  participant_id    BigInt
+  blocking_road     Int?           @db.TinyInt
+  fire              Int?           @db.TinyInt
+  participant       participant    @relation(fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_missing_checkpoint_participant100")
+  pptrackeralert    pptrackeralert @relation(fields: [ppTrackerAlert_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_missing_checkpoint_ppTrackerAlert100")
+
+  @@index([participant_id], map: "fk_missing_checkpoint_participant1_idx")
+  @@index([ppTrackerAlert_id], map: "fk_missing_checkpoint_ppTrackerAlert1_idx")
+}
+
+model missing_checkpoint {
+  id                BigInt         @id
+  ppTrackerAlert_id BigInt
+  participant_id    BigInt
+  waypoint_id       BigInt
+  participant       participant    @relation(fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_missing_checkpoint_participant1")
+  pptrackeralert    pptrackeralert @relation(fields: [ppTrackerAlert_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_missing_checkpoint_ppTrackerAlert1")
+  waypoint          waypoint       @relation(fields: [waypoint_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_missing_checkpoint_waypoint1")
+
+  @@index([participant_id], map: "fk_missing_checkpoint_participant1_idx")
+  @@index([ppTrackerAlert_id], map: "fk_missing_checkpoint_ppTrackerAlert1_idx")
+  @@index([waypoint_id], map: "fk_missing_checkpoint_waypoint1_idx")
+}
+
+model overspeed_alert {
+  id                BigInt         @id
+  ppTrackerAlert_id BigInt
+  participant_id    BigInt
+  allowed_speed     Float?
+  max_speed         Float?
+  participant       participant    @relation(fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_missing_checkpoint_participant10")
+  pptrackeralert    pptrackeralert @relation(fields: [ppTrackerAlert_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_missing_checkpoint_ppTrackerAlert10")
+
+  @@index([participant_id], map: "fk_missing_checkpoint_participant1_idx")
+  @@index([ppTrackerAlert_id], map: "fk_missing_checkpoint_ppTrackerAlert1_idx")
+}
+
+model participant {
+  id                                                                            BigInt                          @id @default(autoincrement())
+  number                                                                        String                          @db.VarChar(45)
+  rally_id                                                                      BigInt
+  curren_participant_state_change_id                                            BigInt?                         @default(0)
+  driver_name                                                                   String                          @db.VarChar(255)
+  driver_surname                                                                String                          @db.VarChar(255)
+  driver_country_id                                                             BigInt
+  codriver_name                                                                 String                          @db.VarChar(255)
+  codriver_surname                                                              String                          @db.VarChar(255)
+  codriver_country_id                                                           BigInt
+  vehicle                                                                       String                          @db.VarChar(255)
+  team                                                                          String                          @db.VarChar(255)
+  tyres                                                                         String                          @db.VarChar(255)
+  category                                                                      String                          @db.VarChar(255)
+  is_officialcar                                                                Boolean                         @default(false)
+  category_id                                                                   BigInt?                         @default(0)
+  participant_categories                                                        participant_categories?         @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_catoegory")
+  rally                                                                         rally                           @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_rally1")
+  backtrack_alert                                                               backtrack_alert[]
+  blue_flag_procedure_blue_flag_procedure_blue_flag_participant_idToparticipant blue_flag_procedure[]           @relation("blue_flag_procedure_blue_flag_participant_idToparticipant")
+  blue_flag_procedure_blue_flag_procedure_participant_idToparticipant           blue_flag_procedure[]           @relation("blue_flag_procedure_participant_idToparticipant")
+  flag_message_ack                                                              flag_message_ack[]
+  mechanic_alert                                                                mechanic_alert[]
+  missing_checkpoint                                                            missing_checkpoint[]
+  overspeed_alert                                                               overspeed_alert[]
+  participant_current_pptracker                                                 participant_current_pptracker[]
+  participant_has_pptracker                                                     participant_has_pptracker[]
+  participant_has_tag                                                           participant_has_tag[]
+  participant_message_state                                                     participant_message_state[]
+  penalty                                                                       penalty[]
+  sos_alert                                                                     sos_alert[]
+  training_attempts                                                             training_attempts[]
+  waypoint_split_time                                                           waypoint_split_time[]
+
+  @@index([category_id], map: "fk_participant_catoegory_idx")
+  @@index([rally_id], map: "fk_participant_rally1_idx")
+}
+
+model participant_has_pptracker {
+  participant_id              BigInt
+  ppTracker_id                BigInt
+  assigned_at_time_control_id BigInt?
+  change_time                 BigInt      @default(0)
+  is_main_tracker             Boolean     @default(false)
+  participant                 participant @relation(fields: [participant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_participant_has_ppTracker_participant1")
+  pptracker                   pptracker   @relation(fields: [ppTracker_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_has_ppTracker_ppTracker1")
+
+  @@id([participant_id, ppTracker_id])
+  @@index([participant_id], map: "fk_participant_has_ppTracker_participant1_idx")
+  @@index([ppTracker_id], map: "fk_participant_has_ppTracker_ppTracker1_idx")
+}
+
+model participant_has_tag {
+  participant_id      BigInt
+  tag_id              BigInt
+  tag_championship_id BigInt
+  participant         participant @relation(fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_has_tag_participant1")
+  tag                 tag         @relation(fields: [tag_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_has_tag_tag1")
+
+  @@id([participant_id, tag_id, tag_championship_id])
+  @@index([participant_id], map: "fk_participant_has_tag_participant1_idx")
+  @@index([tag_id, tag_championship_id], map: "fk_participant_has_tag_tag1_idx")
+}
+
+model participant_message {
+  id                        BigInt                      @id
+  rally_id                  BigInt
+  predefined_message_id     BigInt
+  predefined_message        predefined_message          @relation(fields: [predefined_message_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_message_predefined_message1")
+  rally                     rally                       @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_message_rally1")
+  participant_message_state participant_message_state[]
+
+  @@index([predefined_message_id], map: "fk_participant_message_predefined_message1_idx")
+  @@index([rally_id], map: "fk_participant_message_rally1_idx")
+}
+
+model participant_message_state {
+  id                       BigInt                @id
+  participant_message_Id   BigInt
+  participant_id           BigInt
+  ppTracker_message_ack_id BigInt
+  participant              participant           @relation(fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_message_ack_participant1")
+  participant_message      participant_message   @relation(fields: [participant_message_Id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_message_ack_participant_message1")
+  pptracker_message_ack    pptracker_message_ack @relation(fields: [ppTracker_message_ack_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_message_state_ppTracker_message_ack1")
+
+  @@index([participant_id], map: "fk_participant_message_ack_participant1_idx")
+  @@index([participant_message_Id], map: "fk_participant_message_ack_participant_message1_idx")
+  @@index([ppTracker_message_ack_id], map: "fk_participant_message_state_ppTracker_message_ack1_idx")
+}
+
+model participant_state_change {
+  id              BigInt       @id
+  state_name      String       @db.VarChar(255)
+  reason          String       @db.VarChar(255)
+  time_control_id BigInt
+  time_control    time_control @relation(fields: [time_control_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_state_change_time_control1")
+
+  @@index([time_control_id], map: "fk_participant_state_change_time_control1_idx")
+}
+
+model penalty {
+  id              BigInt       @id
+  participant_id  BigInt
+  rally_id        BigInt
+  time_control_id BigInt
+  state           String?      @db.VarChar(45)
+  penalty_type    String?      @db.VarChar(255)
+  penalty_secs    Int?
+  comment         String?      @db.VarChar(255)
+  participant     participant  @relation(fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_penalty_participant1")
+  rally           rally        @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_penalty_rally1")
+  time_control    time_control @relation(fields: [time_control_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_penalty_time_control1")
+
+  @@index([participant_id], map: "fk_penalty_participant1_idx")
+  @@index([rally_id], map: "fk_penalty_rally1_idx")
+  @@index([time_control_id], map: "fk_penalty_time_control1_idx")
+}
+
+model permision {
+  id                  Int                   @id @default(autoincrement())
+  name                String?               @db.VarChar(100)
+  role_has_permisions role_has_permisions[]
+}
+
+model person {
+  id                                             BigInt     @id
+  first_name                                     String?    @db.VarChar(255)
+  second_name                                    String?    @db.VarChar(45)
+  birthday                                       DateTime?  @db.Date
+  born_country_id                                BigInt
+  nationality_country_id                         BigInt
+  country_countryToperson_born_country_id        country    @relation("countryToperson_born_country_id", fields: [born_country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_person_country1")
+  country_countryToperson_nationality_country_id country    @relation("countryToperson_nationality_country_id", fields: [nationality_country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_person_country2")
+  codriver                                       codriver[]
+  driver                                         driver[]
+
+  @@index([born_country_id], map: "fk_person_country1_idx")
+  @@index([nationality_country_id], map: "fk_person_country2_idx")
+}
+
+model pptracker {
+  id                            BigInt                         @id
+  pptracker_type_id             Int?
+  pptracker_firmware_version_id BigInt?
+  pptracker_firmware_versions   pptracker_firmware_versions?   @relation(fields: [pptracker_firmware_version_id], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "pptracker_firmware_id")
+  participant_current_pptracker participant_current_pptracker?
+  participant_has_pptracker     participant_has_pptracker[]
+  pptracker_gps_log_entry       pptracker_gps_log_entry[]
+  pptracker_message_ack         pptracker_message_ack[]
+  pptrackeralert                pptrackeralert[]
+
+  @@index([pptracker_firmware_version_id], map: "pptracker_firmware_id_idx")
+}
+
+model pptracker_gps_log_entry {
+  id           BigInt?
+  timestamp    BigInt?
+  gps_position String    @id @db.VarChar(255)
+  ppTracker_id BigInt
+  pptracker    pptracker @relation(fields: [ppTracker_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ppTracker_gps_log_entry_ppTracker1")
+
+  @@index([ppTracker_id], map: "fk_ppTracker_gps_log_entry_ppTracker1_idx")
+}
+
+model pptracker_message_ack {
+  id                        BigInt                      @id
+  ppTracker_id              BigInt
+  send_at                   DateTime?                   @db.DateTime(0)
+  received_at               DateTime?                   @db.DateTime(0)
+  response_at               DateTime?                   @db.DateTime(0)
+  response                  String?                     @db.VarChar(45)
+  pptracker                 pptracker                   @relation(fields: [ppTracker_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ppTracker_message_ack_ppTracker1")
+  flag_message_ack          flag_message_ack[]
+  participant_message_state participant_message_state[]
+
+  @@index([ppTracker_id], map: "fk_ppTracker_message_ack_ppTracker1_idx")
+}
+
+model pptrackeralert {
+  id                                                                                           BigInt                @id
+  ppTracker_id                                                                                 BigInt
+  alert_type                                                                                   String?               @db.VarChar(45)
+  received_at                                                                                  DateTime?             @db.DateTime(0)
+  pptracker                                                                                    pptracker             @relation(fields: [ppTracker_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ppTrackerAlert_ppTracker1")
+  backtrack_alert                                                                              backtrack_alert[]
+  blue_flag_procedure_blue_flag_procedure_blue_flag_accepted_ppTrackerAlert_idTopptrackeralert blue_flag_procedure[] @relation("blue_flag_procedure_blue_flag_accepted_ppTrackerAlert_idTopptrackeralert")
+  blue_flag_procedure_blue_flag_procedure_blue_flag_received_ppTrackerAlert_idTopptrackeralert blue_flag_procedure[] @relation("blue_flag_procedure_blue_flag_received_ppTrackerAlert_idTopptrackeralert")
+  blue_flag_procedure_blue_flag_procedure_ppTrackerAlert_idTopptrackeralert                    blue_flag_procedure[] @relation("blue_flag_procedure_ppTrackerAlert_idTopptrackeralert")
+  mechanic_alert                                                                               mechanic_alert[]
+  missing_checkpoint                                                                           missing_checkpoint[]
+  overspeed_alert                                                                              overspeed_alert[]
+  sos_alert                                                                                    sos_alert[]
+  waypoint_split_time                                                                          waypoint_split_time[]
+
+  @@index([ppTracker_id], map: "fk_ppTrackerAlert_ppTracker1_idx")
+}
+
+model predefined_info_message {
+  id               BigInt  @id
+  string           String? @db.VarChar(255)
+  text_color       String? @db.VarChar(45)
+  background_color String? @db.VarChar(45)
+  blinking         Int?    @default(0) @db.TinyInt
+  logOnly          Int?    @db.TinyInt
+}
+
+model predefined_message {
+  id                  BigInt                @id
+  message             String?               @db.VarChar(255)
+  response_type       String?               @db.VarChar(45)
+  participant_message participant_message[]
+}
+
+model promoter {
+  id                         BigInt                       @id @default(autoincrement())
+  name                       String?                      @default("") @db.VarChar(255)
+  slug                       String?                      @db.VarChar(255)
+  website_url                String?                      @db.VarChar(255)
+  active                     Int?                         @default(0) @db.TinyInt
+  logo                       String?                      @db.VarChar(255)
+  event                      event[]
+  promoter_has_championships promoter_has_championships[]
+  promoter_user              promoter_user[]
+}
+
+model promoter_has_championships {
+  promoter_id     BigInt
+  championship_id BigInt
+  championship    championship @relation(fields: [championship_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_promoter_has_championship_championship1")
+  promoter        promoter     @relation(fields: [promoter_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_promoter_has_championship_promoter1")
+
+  @@id([promoter_id, championship_id])
+  @@index([championship_id], map: "fk_promoter_has_championship_championship1_idx")
+  @@index([promoter_id], map: "fk_promoter_has_championship_promoter1_idx")
+}
+
+model promoter_user {
+  promoter_id        BigInt
+  user_id            BigInt
+  active             Int?                 @default(0) @db.TinyInt
+  api_token          String               @db.VarChar(145)
+  promoter           promoter             @relation(fields: [promoter_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_promoter_has_user_promoter1")
+  user               user                 @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_promooter_has_user")
+  promoter_user_role promoter_user_role[]
+
+  @@id([promoter_id, user_id])
+  @@index([user_id], map: "fk_promooter_has_user_idx")
+  @@index([promoter_id], map: "fk_promoter_has_user_promoter1_idx")
+}
+
+model promoter_user_role {
+  promoter_users_promoter_id BigInt
+  promoter_users_user_id     BigInt
+  role_id                    Int
+  promoter_user              promoter_user @relation(fields: [promoter_users_promoter_id, promoter_users_user_id], references: [promoter_id, user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_promoter_users_has_role_promoter_users1")
+  role                       role          @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_promoter_users_has_role_role1")
+
+  @@id([promoter_users_promoter_id, promoter_users_user_id, role_id])
+  @@index([promoter_users_promoter_id, promoter_users_user_id], map: "fk_promoter_users_has_role_promoter_users1_idx")
+  @@index([role_id], map: "fk_promoter_users_has_role_role1_idx")
+}
+
+model rally {
+  id                             BigInt                   @id @default(autoincrement())
+  name                           String                   @db.VarChar(255)
+  slug                           String                   @db.VarChar(255)
+  start_date                     BigInt
+  end_date                       BigInt
+  surface                        String                   @db.VarChar(255)
+  website_url                    String                   @db.VarChar(255)
+  event_id                       BigInt
+  season_id                      BigInt?
+  closed                         Int                      @default(0) @db.TinyInt
+  rally_kml_file                 String                   @default("track.kml") @db.VarChar(255)
+  tiny_pos_frequency             Int                      @default(1) @db.SmallInt
+  tiny_sos_frequency             Int                      @default(3) @db.SmallInt
+  tiny_flags_frequency           Int                      @default(3) @db.SmallInt
+  tiny_connected_frequency       Int                      @default(5) @db.SmallInt
+  tiny_stage_changes_frequency   Int                      @default(5) @db.SmallInt
+  tiny_messages_frequency        Int                      @default(5) @db.SmallInt
+  tiny_blue_flag_frequency       Int                      @default(5) @db.SmallInt
+  version                        BigInt                   @default(1)
+  training_max_speed             Decimal                  @default(80.00) @db.Decimal(10, 2)
+  rally_type                     BigInt                   @default(2)
+  public                         Int                      @default(1) @db.TinyInt
+  login_required_for_public_view Int                      @default(0) @db.TinyInt
+  default_stop_zone_time         Int                      @default(3)
+  show_track_on_viewers          Int?                     @default(0) @db.TinyInt
+  show_waypoints_on_viewers      Int?                     @default(0) @db.TinyInt
+  allow_red_flag                 Int?                     @default(1) @db.TinyInt
+  tiny_incidences_frequency      Int                      @default(10) @db.SmallInt
+  event                          event                    @relation(fields: [event_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rally_event")
+  rally_type_rallyTorally_type   rally_type               @relation(fields: [rally_type], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rally_type")
+  season                         season?                  @relation(fields: [season_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rally_season1")
+  backtrack_alert                backtrack_alert[]
+  event_has_rallies              event_has_rallies[]
+  flag_log_entry                 flag_log_entry[]
+  info_message                   info_message[]
+  leg                            leg[]
+  participant                    participant[]
+  participant_categories         participant_categories[]
+  participant_message            participant_message[]
+  penalty                        penalty[]
+  stage                          stage[]
+  time_control                   time_control[]
+  track                          track[]
+
+  @@index([event_id], map: "fk_rally_event1_idx")
+  @@index([season_id], map: "fk_rally_season1_idx")
+  @@index([rally_type], map: "fk_rally_type_idx")
+}
+
+model role {
+  id                  Int                   @id @default(autoincrement())
+  name                String                @db.VarChar(255)
+  tag_type            String?               @db.VarChar(255)
+  description         String?               @default("") @db.VarChar(250)
+  locked              Int?                  @default(0) @db.TinyInt
+  promoter_user_role  promoter_user_role[]
+  role_has_permisions role_has_permisions[]
+  user_global_role    user_global_role[]
+}
+
+model role_has_permisions {
+  role_id      Int
+  permision_id Int
+  permision    permision @relation(fields: [permision_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_role_has_permision_permision1")
+  role         role      @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_role_has_permision_role1")
+
+  @@id([role_id, permision_id])
+  @@index([permision_id], map: "fk_role_has_permision_permision1_idx")
+  @@index([role_id], map: "fk_role_has_permision_role1_idx")
+}
+
+model route_book_line {
+  id                 BigInt  @id @default(autoincrement())
+  idx                BigInt?
+  total_distance     Int?
+  gps_point          String? @db.VarChar(45)
+  image1_asset       String? @db.VarChar(255)
+  image2_asset       String? @db.VarChar(255)
+  route_book_linecol String? @db.VarChar(45)
+}
+
+model season {
+  id              BigInt       @id @default(autoincrement())
+  number          Int
+  name            String       @db.VarChar(255)
+  slug            String       @db.VarChar(255)
+  championship_id BigInt
+  championship    championship @relation(fields: [championship_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_season_championship1")
+  rally           rally[]
+
+  @@index([championship_id], map: "fk_season_championship1_idx")
+}
+
+model section {
+  id                                                         BigInt       @id
+  idx                                                        Int?
+  name                                                       String?      @db.VarChar(255)
+  first_time_control_id                                      BigInt
+  results_time_control_id                                    BigInt
+  state                                                      String?      @db.VarChar(45)
+  leg_id                                                     BigInt
+  time_control_section_first_time_control_idTotime_control   time_control @relation("section_first_time_control_idTotime_control", fields: [first_time_control_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_leg_time_control10")
+  leg                                                        leg          @relation(fields: [leg_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_section_leg1")
+  time_control_section_results_time_control_idTotime_control time_control @relation("section_results_time_control_idTotime_control", fields: [results_time_control_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_leg_time_control20")
+
+  @@index([first_time_control_id], map: "fk_leg_time_control1_idx")
+  @@index([results_time_control_id], map: "fk_leg_time_control2_idx")
+  @@index([leg_id], map: "fk_section_leg1_idx")
+}
+
+model sos_alert {
+  id                BigInt         @id
+  ppTrackerAlert_id BigInt
+  participant_id    BigInt
+  blocking_road     Int?           @db.TinyInt
+  medical           Int?           @db.TinyInt
+  fire              Int?           @db.TinyInt
+  participant       participant    @relation(fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_missing_checkpoint_participant1000")
+  pptrackeralert    pptrackeralert @relation(fields: [ppTrackerAlert_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_missing_checkpoint_ppTrackerAlert1000")
+
+  @@index([participant_id], map: "fk_missing_checkpoint_participant1_idx")
+  @@index([ppTrackerAlert_id], map: "fk_missing_checkpoint_ppTrackerAlert1_idx")
+}
+
+model speed_zone {
+  id        BigInt   @id @default(autoincrement())
+  name      String?  @db.VarChar(45)
+  start_lat Int?
+  end_lat   Int?
+  track_id  BigInt
+  start_lon Int?
+  end_lon   Int?
+  max_speed Decimal? @db.Decimal(5, 2)
+  track     track    @relation(fields: [track_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_neutralization_zone_track1")
+
+  @@index([track_id], map: "fk_neutralization_zone_track1_idx")
+}
+
+model stage {
+  id                BigInt              @id @default(autoincrement())
+  leg               Int
+  section           Int
+  sector            Int
+  idx               Int
+  stage_number      Int
+  date              BigInt
+  track_id          BigInt?
+  stage_type_id     BigInt
+  time_control      String              @db.VarChar(45)
+  name              String              @db.VarChar(255)
+  distance          String              @db.VarChar(45)
+  time              String              @db.VarChar(45)
+  kph               String              @db.VarChar(45)
+  first_car_at      String              @db.VarChar(45)
+  rally_id          BigInt
+  max_speed         Decimal             @default(0.00) @db.Decimal(5, 2)
+  version           Int                 @default(1)
+  summer_time       Int                 @default(0) @db.TinyInt
+  is_closed         Int                 @default(0) @db.TinyInt
+  stage_status      Int                 @default(0)
+  rally             rally               @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_stage_rally")
+  stage_type        stage_type          @relation(fields: [stage_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_stage_stage_type1")
+  track             track?              @relation(fields: [track_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_stage_track1")
+  flag_log_entry    flag_log_entry[]
+  training_attempts training_attempts[]
+  training_windows  training_windows[]
+  waypoint          waypoint[]
+
+  @@index([time_control], map: "fk_leg_time_control2_idx")
+  @@index([rally_id], map: "fk_stage_rally_idx")
+  @@index([section], map: "fk_stage_section1_idx")
+  @@index([stage_type_id], map: "fk_stage_stage_type1_idx")
+  @@index([track_id], map: "fk_stage_track1_idx")
+}
+
+model stage_type {
+  id      BigInt  @id @default(autoincrement())
+  name_en String  @db.VarChar(255)
+  name_es String  @db.VarChar(255)
+  code    String  @db.VarChar(255)
+  stage   stage[]
+}
+
+model tag {
+  id                  BigInt                @id
+  name                String?               @db.VarChar(255)
+  championship_id     BigInt
+  tagcol              String?               @db.VarChar(45)
+  championship        championship          @relation(fields: [championship_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tag_championship1")
+  participant_has_tag participant_has_tag[]
+
+  @@index([championship_id], map: "fk_tag_championship1_idx")
+}
+
+model team {
+  id         BigInt  @id
+  name       String  @db.VarChar(255)
+  country_id BigInt
+  country    country @relation(fields: [country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_team_country10")
+
+  @@index([country_id], map: "fk_team_country1_idx")
+}
+
+model time_control {
+  id                                                    BigInt                     @id @default(autoincrement())
+  rally_id                                              BigInt
+  name                                                  String                     @db.VarChar(255)
+  idx                                                   Int
+  location                                              String?                    @db.VarChar(255)
+  first_car_due_time                                    String?                    @db.VarChar(45)
+  time_control_type_id                                  BigInt?
+  sector                                                Int?
+  sector_distance                                       Int?
+  sector_compound_distance                              Int?
+  sector_target_time                                    String?                    @db.VarChar(45)
+  rally                                                 rally                      @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_time_control_rally1")
+  time_control_type                                     time_control_type?         @relation(fields: [time_control_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_time_control_time_control_type1")
+  leg_leg_first_time_control_idTotime_control           leg[]                      @relation("leg_first_time_control_idTotime_control")
+  leg_leg_results_time_control_idTotime_control         leg[]                      @relation("leg_results_time_control_idTotime_control")
+  participant_state_change                              participant_state_change[]
+  penalty                                               penalty[]
+  section_section_first_time_control_idTotime_control   section[]                  @relation("section_first_time_control_idTotime_control")
+  section_section_results_time_control_idTotime_control section[]                  @relation("section_results_time_control_idTotime_control")
+
+  @@index([rally_id], map: "fk_time_control_rally1_idx")
+  @@index([time_control_type_id], map: "fk_time_control_time_control_type1_idx")
+}
+
+model time_control_type {
+  id           BigInt         @id
+  name         String?        @db.VarChar(255)
+  time_control time_control[]
+}
+
+model track {
+  id                     BigInt                @id @default(autoincrement())
+  name                   String                @db.VarChar(255)
+  description            String                @db.VarChar(255)
+  kml_path_url           String                @db.VarChar(255)
+  route_book_url         String                @db.VarChar(45)
+  kmz_path_url           String                @db.VarChar(255)
+  rally_id               BigInt
+  allow_trip_meter_reset Boolean?              @default(false)
+  rally                  rally                 @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rally_id")
+  netralization_zones    netralization_zones[]
+  speed_zone             speed_zone[]
+  speed_zones            speed_zones[]
+  stage                  stage[]
+  stop_zones             stop_zones[]
+  track_waypoints        track_waypoints[]
+
+  @@index([rally_id], map: "fk_rally_id_idx")
+}
+
+model tyres {
+  id   BigInt @id
+  name String @db.VarChar(255)
+}
+
+model user {
+  id               BigInt             @id @default(autoincrement())
+  email            String             @default("") @db.VarChar(145)
+  firstName        String             @db.VarChar(255)
+  lastName         String             @db.VarChar(255)
+  password         String             @default("") @db.VarChar(255)
+  active           Boolean            @default(false)
+  creation_date    BigInt?
+  last_login       BigInt?
+  promoter_user    promoter_user[]
+  user_global_role user_global_role[]
+}
+
+model user_global_role {
+  user_id BigInt
+  role_id Int
+  role    role   @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_has_role_role1")
+  user    user   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_global_role_user")
+
+  @@id([user_id, role_id])
+  @@index([role_id], map: "fk_user_has_role_role1_idx")
+  @@index([user_id], map: "fk_user_has_role_user_idx")
+}
+
+model vehicle {
+  id              BigInt       @id
+  name            String       @db.VarChar(255)
+  manufacturer_id BigInt
+  manufacturer    manufacturer @relation(fields: [manufacturer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_vehicle_manufacturer1")
+
+  @@index([manufacturer_id], map: "fk_vehicle_manufacturer1_idx")
+}
+
+model waypoint {
+  id                     BigInt                @id @default(autoincrement())
+  idx                    Int?
+  name                   String?               @db.VarChar(45)
+  waypoint_type_id       BigInt?
+  start_gps_point        String?               @db.VarChar(255)
+  end_gps_point          String?               @db.VarChar(45)
+  inner_radius           Int?
+  proximity_radius_alert Int?
+  stage_id               BigInt
+  external_radius        Int?
+  lat                    Int?
+  lon                    Int?
+  stage                  stage                 @relation(fields: [stage_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_waypoint_stage")
+  waypoint_types         waypoint_types?       @relation(fields: [waypoint_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_waypoint_waypoint_type")
+  missing_checkpoint     missing_checkpoint[]
+  waypoint_split_time    waypoint_split_time[]
+
+  @@index([stage_id], map: "fk_waypoint_stage_idx")
+  @@index([waypoint_type_id], map: "fk_waypoint_waypoint_type_idx")
+}
+
+model waypoint_split_time {
+  id                BigInt         @id
+  time              DateTime?      @db.DateTime(0)
+  ppTrackerAlert_id BigInt
+  participant_id    BigInt
+  waypoint_id       BigInt
+  participant       participant    @relation(fields: [participant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_waypoint_split_time_participant1")
+  pptrackeralert    pptrackeralert @relation(fields: [ppTrackerAlert_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_waypoint_split_time_ppTrackerAlert1")
+  waypoint          waypoint       @relation(fields: [waypoint_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_waypoint_split_time_waypoint1")
+
+  @@index([participant_id], map: "fk_waypoint_split_time_participant1_idx")
+  @@index([ppTrackerAlert_id], map: "fk_waypoint_split_time_ppTrackerAlert1_idx")
+  @@index([waypoint_id], map: "fk_waypoint_split_time_waypoint1_idx")
+}
+
+model track_waypoints {
+  id                                                                              BigInt                @id @default(autoincrement())
+  track_id                                                                        BigInt
+  idx                                                                             Int
+  name                                                                            String                @db.VarChar(255)
+  lon                                                                             Int
+  lat                                                                             Int
+  innerRadius                                                                     Int
+  externalRadius                                                                  Int
+  type                                                                            String                @db.VarChar(45)
+  waypoint_type_id                                                                BigInt
+  km                                                                              Int                   @default(0)
+  track                                                                           track                 @relation(fields: [track_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_track_id")
+  waypoint_types                                                                  waypoint_types        @relation(fields: [waypoint_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_track_waypoints_waypoint_types")
+  netralization_zones_netralization_zones_track_waypoints_in_idTotrack_waypoints  netralization_zones[] @relation("netralization_zones_track_waypoints_in_idTotrack_waypoints")
+  netralization_zones_netralization_zones_track_waypoints_out_idTotrack_waypoints netralization_zones[] @relation("netralization_zones_track_waypoints_out_idTotrack_waypoints")
+  speed_zones_speed_zones_track_waypoints_in_idTotrack_waypoints                  speed_zones[]         @relation("speed_zones_track_waypoints_in_idTotrack_waypoints")
+  speed_zones_speed_zones_track_waypoints_out_idTotrack_waypoints                 speed_zones[]         @relation("speed_zones_track_waypoints_out_idTotrack_waypoints")
+  stop_zones                                                                      stop_zones[]
+
+  @@index([track_id], map: "fk_track_id_idx")
+  @@index([waypoint_type_id], map: "fk_track_waypoints_waypoint_types_idx")
+}
+
+model training_attempts {
+  id                           BigInt                         @id @default(autoincrement())
+  participant_id               BigInt
+  stage_id                     BigInt
+  start_time                   BigInt?                        @default(0)
+  end_time                     BigInt?                        @default(0)
+  participant                  participant                    @relation(fields: [participant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_training_attempts_participants")
+  stage                        stage                          @relation(fields: [stage_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_training_attempts_stages")
+  training_attempts_alerts     training_attempts_alerts[]
+  training_attempts_incidences training_attempts_incidences[]
+
+  @@index([participant_id], map: "fk_training_attempts_participants_idex")
+  @@index([stage_id], map: "fk_training_attempts_stages_idx")
+  @@index([end_time], map: "training_window_end_time_idx")
+  @@index([start_time], map: "training_window_start_time_idx")
+}
+
+model training_attempts_alerts {
+  id                  BigInt            @id @default(autoincrement())
+  training_attempt_id BigInt
+  time                BigInt?           @default(0)
+  type                Boolean?          @default(false)
+  training_attempts   training_attempts @relation(fields: [training_attempt_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_training_attempts_alerts_training_attempts")
+
+  @@index([training_attempt_id], map: "fk_training_attempts_alerts_training_attempts_idx")
+  @@index([time])
+  @@index([type])
+}
+
+model training_attempts_incidences {
+  id                  BigInt             @id @default(autoincrement())
+  training_attempt_id BigInt?
+  start_time          BigInt?
+  end_time            BigInt?
+  type                Boolean?           @default(false)
+  training_attempts   training_attempts? @relation(fields: [training_attempt_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_training_attempts_incidences_training_attempts")
+
+  @@index([training_attempt_id], map: "fk_training_attempts_incidences_training_attempts_idx")
+}
+
+model training_attempts_incidences_logs {
+  id                  BigInt  @id @default(autoincrement())
+  training_attempt_id BigInt?
+  timestamp           BigInt?
+  lat                 Float?
+  lon                 Float?
+  alt                 Float?
+  spd                 Float?
+  head                Float?
+  sats                Int?
+
+  @@index([training_attempt_id], map: "fk_training_attempts_incidences_logs_training_attempts_idx")
+}
+
+model training_max_speed {
+  id                     BigInt                  @id @default(autoincrement())
+  training_window_id     BigInt
+  number_of_attempt      Int
+  max_speed              Decimal                 @db.Decimal(5, 2)
+  category_id            BigInt?
+  participant_categories participant_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction, map: "fk_participant_category")
+  training_windows       training_windows        @relation(fields: [training_window_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_training_window")
+
+  @@index([category_id], map: "fk_participant_category_idx")
+  @@index([training_window_id], map: "fk_training_window_idx")
+  @@index([number_of_attempt])
+}
+
+model training_windows {
+  id                 BigInt               @id @default(autoincrement())
+  stage_id           BigInt
+  start_time         BigInt
+  end_time           BigInt
+  stage              stage                @relation(fields: [stage_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_training_window_stage")
+  training_max_speed training_max_speed[]
+
+  @@index([stage_id], map: "fk_training_window_stage_idx")
+  @@index([end_time], map: "training_window_end_time_idx")
+  @@index([start_time], map: "training_window_start_time_idx")
+}
+
+model waypoint_types {
+  id                  BigInt            @id
+  name                String            @db.VarChar(255)
+  name_en             String            @db.VarChar(255)
+  name_es             String            @db.VarChar(255)
+  default_inner_radio Int               @default(20)
+  default_outer_radio Int               @default(100)
+  default_apperture   Int               @default(0)
+  default_mandatory   Int               @default(1)
+  track_waypoints     track_waypoints[]
+  waypoint            waypoint[]
+}
+
+model participant_current_pptracker {
+  participant_id BigInt
+  pptracker_id   BigInt      @id
+  participant    participant @relation(fields: [participant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "participant_current_pptracker_participant")
+  pptracker      pptracker   @relation(fields: [pptracker_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "participant_current_pptracker_pptracker")
+
+  @@index([participant_id], map: "participant_current_pptracker_participant_idx")
+  @@index([pptracker_id], map: "participant_current_pptracker_pptracker_idx")
+}
+
+model pptracker_type {
+  id   Int     @id @default(autoincrement())
+  name String? @db.VarChar(45)
+}
+
+model pptracker_firmware_versions {
+  id                 BigInt      @id @default(autoincrement())
+  version            String      @unique(map: "version_UNIQUE") @db.VarChar(145)
+  url                String      @db.Text
+  is_default_version Boolean     @default(false)
+  pptracker          pptracker[]
+
+  @@index([is_default_version], map: "is_default_version_idx")
+}
+
+model pptracker_shortcodes {
+  id           String @id @db.VarChar(45)
+  pptracker_id BigInt @unique(map: "pptracker_id_UNIQUE")
+}
+
+model participant_categories {
+  id                 BigInt               @id @default(autoincrement())
+  name               String               @db.VarChar(255)
+  rally_id           BigInt
+  max_speed          Decimal?             @default(300.00) @db.Decimal(10, 2)
+  rally              rally                @relation(fields: [rally_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_participant_categories_rally")
+  participant        participant[]
+  training_max_speed training_max_speed[]
+
+  @@index([rally_id], map: "fk_participant_categories_rally_idx")
+}
+
+model rally_type {
+  id      BigInt  @id @default(autoincrement())
+  name    String? @db.VarChar(45)
+  name_es String? @db.VarChar(45)
+  rally   rally[]
+}
+
+model netralization_zones {
+  id                                                                          BigInt          @id @default(autoincrement())
+  name                                                                        String          @db.VarChar(254)
+  track_id                                                                    BigInt
+  track_waypoints_in_id                                                       BigInt
+  track_waypoints_out_id                                                      BigInt
+  minimum_time                                                                Int             @default(0)
+  maximum_time                                                                Int             @default(0)
+  maximum_speed                                                               Int             @default(0)
+  neutralization_zones_types_id                                               Int             @default(0)
+  area                                                                        String          @db.Text
+  area_start_lat                                                              Int             @default(0)
+  area_end_lat                                                                Int             @default(0)
+  area_start_lon                                                              Int             @default(0)
+  area_end_lon                                                                Int             @default(0)
+  track                                                                       track           @relation(fields: [track_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_nz_track_id")
+  track_waypoints_netralization_zones_track_waypoints_in_idTotrack_waypoints  track_waypoints @relation("netralization_zones_track_waypoints_in_idTotrack_waypoints", fields: [track_waypoints_in_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_nz_waypoint_in_id")
+  track_waypoints_netralization_zones_track_waypoints_out_idTotrack_waypoints track_waypoints @relation("netralization_zones_track_waypoints_out_idTotrack_waypoints", fields: [track_waypoints_out_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_nz_waypoint_out_id")
+
+  @@index([track_id], map: "fk_nz_track_id_idx")
+  @@index([track_waypoints_in_id], map: "fk_nz_waypoint_in_id_idx")
+  @@index([track_waypoints_out_id], map: "fk_nz_waypoint_out_id_idx")
+}
+
+model speed_zones {
+  id                                                                  BigInt          @id @default(autoincrement())
+  name                                                                String          @db.VarChar(254)
+  track_id                                                            BigInt
+  track_waypoints_in_id                                               BigInt
+  track_waypoints_out_id                                              BigInt
+  maximum_speed                                                       Decimal         @default(0.00) @db.Decimal(10, 2)
+  neutralization_zones_types_id                                       Int             @default(0)
+  area                                                                String          @db.Text
+  area_start_lat                                                      Int             @default(0)
+  area_end_lat                                                        Int             @default(0)
+  area_start_lon                                                      Int             @default(0)
+  area_end_lon                                                        Int             @default(0)
+  track                                                               track           @relation(fields: [track_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_sp_track_id")
+  track_waypoints_speed_zones_track_waypoints_in_idTotrack_waypoints  track_waypoints @relation("speed_zones_track_waypoints_in_idTotrack_waypoints", fields: [track_waypoints_in_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_sp_waypoint_in")
+  track_waypoints_speed_zones_track_waypoints_out_idTotrack_waypoints track_waypoints @relation("speed_zones_track_waypoints_out_idTotrack_waypoints", fields: [track_waypoints_out_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_sp_waypoint_out")
+
+  @@index([track_id], map: "fk_sp_track_id_idx")
+  @@index([track_waypoints_in_id], map: "fk_sp_waypoint_in_idx")
+  @@index([track_waypoints_out_id], map: "fk_sp_waypoint_out_idx")
+}
+
+model stage_statuses {
+  id      Int    @id @default(autoincrement())
+  name_en String @db.VarChar(254)
+  name_es String @db.VarChar(254)
+}
+
+model stop_zones {
+  id                 BigInt          @id @default(autoincrement())
+  name               String          @db.VarChar(254)
+  track_waypoints_id BigInt
+  track_id           BigInt
+  stop_time          Int             @default(0)
+  max_speed          Int             @default(0)
+  track              track           @relation(fields: [track_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_sz_track_id")
+  track_waypoints    track_waypoints @relation(fields: [track_waypoints_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_sz_track_waypoints_id")
+
+  @@index([track_id], map: "fk_sz_track_id_idx")
+  @@index([track_waypoints_id], map: "fk_sz_track_waypoints_id_idx")
+}
