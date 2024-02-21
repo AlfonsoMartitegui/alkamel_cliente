@@ -6,12 +6,19 @@ import { apiMessage } from "server/shared/socket_io_packets";
 import { stage } from "@prisma/client";
 import { millisToCurrentDate } from "server/shared/utils";
 
+interface AlertIcon {
+  id: number;
+  name: string;
+  icon: string;
+}
+
 interface messageDetailsProps {
   ev: eventInfo | undefined;
   alert: apiMessage;
   participants: participantInfo[];
   stages: stage[];
   onHide: () => void;
+  alertIcons: AlertIcon[];
 }
 
 const MessageDetailsComponent: React.FC<messageDetailsProps> = (props) => {
@@ -74,6 +81,11 @@ const MessageDetailsComponent: React.FC<messageDetailsProps> = (props) => {
   };
 
   const iconsVersion = "v4";
+  let iconText = "Message";
+  const icon = props.alertIcons.find((icon) => icon.name === iconText);
+  const iconUrl = icon
+    ? icon.icon
+    : `/maps/${iconsVersion}/alertIcons/message.png`;
 
   return (
     <Modal
@@ -89,7 +101,7 @@ const MessageDetailsComponent: React.FC<messageDetailsProps> = (props) => {
           <Row>
             <Col className="col-auto">
               <Image
-                src={`/maps/${iconsVersion}/alertIcons/message.png`}
+                src={iconUrl}
                 alt="Message"
                 height={35}
                 width={35}

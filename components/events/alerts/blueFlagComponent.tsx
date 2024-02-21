@@ -7,12 +7,19 @@ import { millisToCurrentDate } from "server/shared/utils";
 import Image from "next/image";
 import BlueFlagDetailsComponent from "./blueFlagDetailsComponent";
 
+interface AlertIcon {
+  id: number;
+  name: string;
+  icon: string;
+}
+
 interface blueFlagProps {
   event: eventInfo | undefined;
   blueFlag: apiBlueFlag;
   participants: participantInfo[];
   stages: stage[];
   onDetails: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  alertIcons: AlertIcon[];
 }
 
 const BlueFlagComponent: React.FC<blueFlagProps> = (props) => {
@@ -36,6 +43,11 @@ const BlueFlagComponent: React.FC<blueFlagProps> = (props) => {
 
   const evOffsetMillis = props.event ? props.event.offsetGMT * 3600000 : 0;
   const iconsVersion = "v4";
+  const iconText = "Blue Flag";
+  const icon = props.alertIcons.find((icon) => icon.name === iconText);
+  const iconUrl = icon
+    ? icon.icon
+    : `/maps/${iconsVersion}/alertIcons/blueFlag.png`;
 
   const getParticipantIdNumber = (id: BigInt) => {
     if (participantsById.has(id)) {
@@ -56,7 +68,7 @@ const BlueFlagComponent: React.FC<blueFlagProps> = (props) => {
     <tr>
       <td>
         <Image
-          src={`/maps/${iconsVersion}/alertIcons/blueFlag.png`}
+          src={iconUrl}
           alt="Overspeeding"
           height={35}
           width={35}

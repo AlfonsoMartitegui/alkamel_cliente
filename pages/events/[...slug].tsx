@@ -40,7 +40,17 @@ import OfficialCarsBar from "components/events/oficialCarsBar";
 import SendMessageComponent from "components/events/sendMessage";
 import TrackingMap from "components/maps/TrackingMap";
 import type { DefaultUser } from "next-auth";
-import { initWaypointIconMarkers } from "components/events/maps/resources";
+import {
+  initWaypointIconMarkers,
+  initWaypointIconMarkers2,
+} from "components/events/maps/resources";
+import { Alert } from "bootstrap";
+
+interface AlertIcon {
+  id: number;
+  name: string;
+  icon: string;
+};
 
 interface EventProps {
   loggedIn: boolean;
@@ -50,12 +60,22 @@ interface EventProps {
   rallies: string;
   stageStatuses: string;
   waypoint_types: string;
+  waypoint_icons_set: string;
+  s3PublicPath: string;
+  s3WaypointIconsFolder: string;
+  waypointIconsSet: string;
+  alertIcons: AlertIcon[];
   user:
     | (DefaultUser & {
         id: string;
         role: string;
       })
     | null;
+  userProfile: {
+    id: number;
+    roleid: number;
+    role: string;
+  };
 }
 
 const verticalDivider: CSS.Properties = {
@@ -172,7 +192,7 @@ const Rally: NextPage<EventProps> = (props) => {
         name: "unknown",
         name_es: "unknown",
         name_en: "unknown",
-        default_apperture: 0,
+        default_apperture: 0n,
         default_inner_radio: 0,
         default_mandatory: 0,
         default_outer_radio: 0,
@@ -402,7 +422,16 @@ const Rally: NextPage<EventProps> = (props) => {
       wpTypes.set(wpType.id, wpType);
     }
     setWaypointTypes(wpTypes);
-    setWaypointMarkers(initWaypointIconMarkers("v5.1", waypoint_types));
+    // setWaypointMarkers(initWaypointIconMarkers("v5.1", waypoint_types));
+    console.log("THIS IS THE WAYPOINT ICONS SET: ", props.waypointIconsSet);
+    setWaypointMarkers(
+      initWaypointIconMarkers2(
+        props.s3PublicPath,
+        props.s3WaypointIconsFolder,
+        props.waypointIconsSet,
+        waypoint_types
+      )
+    );
     if (props.loggedIn) {
       console.log("ADDING JOIN TO CHANNEL: incidences");
       ppTrackerClient.join("incidences");
@@ -1040,6 +1069,7 @@ const Rally: NextPage<EventProps> = (props) => {
               activeEvent ? activeEvent.rallies.length > 0 : false
             }
             user={props.user}
+            userProfile={props.userProfile}
           />
           {showEntryListBar ? (
             <EntryListBar
@@ -1247,6 +1277,7 @@ const Rally: NextPage<EventProps> = (props) => {
                   stages={rally ? rally.stages : []}
                   ppTrackerClient={ppTrackerClient}
                   onCenterMapOnParticipant={onCenterMapOnParticipant}
+                  alertIcons={props.alertIcons}
                 ></AlertsResume>
               </Col>
             ) : (
@@ -1304,7 +1335,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       rallies: "",
       stageStatuses: "",
       waypoint_types: "",
+      waypoint_icons_set: "",
+      s3PublicPath: "",
+      s3WaypointIconsFolder: "",
+      waypointIconsSet: "",
+      alertIcons: "",
       user: null,
+      userProfile: null,
     },
   };
 
@@ -1325,6 +1362,76 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   const stage_statuses = await prismaClient.stage_statuses.findMany();
   const waypoint_types = await prismaClient.waypoint_types.findMany();
+  const waypoint_icons_set = await prismaClient.waypoint_icon_set.findMany();
+
+  const options = await prismaClient.application_settings.findFirst({
+    where: { id: 1 },
+  });
+  const s3PublicPath = options?.s3_public_path;
+  const s3WaypointIconsFolder = options?.s3_waypoint_icons_folder;
+  const s3AlertIconsFolder = options?.s3_alert_icons_folder;
+  const s3DefaultWaypointIconSetId = options?.waypoints_icons_id;
+  const s3DefaultWaypointIconSet =
+    await prismaClient.waypoint_icon_set.findFirst({
+      where: { id: s3DefaultWaypointIconSetId || 1 },
+    });
+  const s3DefaultAlertIconSetId = options?.alert_icons_id;
+  const s3DefaultAlertIconSet = await prismaClient.alert_icon_set.findFirst({
+    where: { id: s3DefaultAlertIconSetId || 1 },
+  });
+
+  const currentEventData = await prismaClient.event.findMany({
+    where: { slug: evSlug },
+  });
+  console.log("CURRENT EVENT DATA:", currentEventData[0]);
+
+  const currentRallyData = await prismaClient.rally.findFirst({
+    where: { event_id: currentEventData[0]?.id || 0 },
+  });
+  console.log("CURRENT RALLY DATA:", currentRallyData);
+
+  const currentRallyWaypointIconsSet =
+    await prismaClient.waypoint_icon_set.findFirst({
+      where: { id: currentRallyData?.waypoints_icons_id || 1 },
+    });
+  const currentRallyWaypointIconsSetFolder =
+    currentRallyWaypointIconsSet?.name || "";
+  // console.log(
+  //   "CURRENT RALLY WAYPOINT ICONS SET FOLDER:",
+  //   currentRallyWaypointIconsSetFolder
+  // );
+  const waypointIconsSet =
+    currentRallyWaypointIconsSetFolder !== null &&
+    currentRallyWaypointIconsSetFolder !== ""
+      ? currentRallyWaypointIconsSetFolder
+      : s3DefaultWaypointIconSet?.name || "";
+
+  const currentRallyAlertIconsSet = await prismaClient.alert_icon_set.findFirst(
+    {
+      where: { id: currentRallyData?.alert_icons_id || 1 },
+    }
+  );
+  const currentRallyAlertIconsSetFolder = currentRallyAlertIconsSet?.name || "";
+  const alertIconsSet =
+    currentRallyAlertIconsSetFolder !== null &&
+    currentRallyAlertIconsSetFolder !== ""
+      ? currentRallyAlertIconsSetFolder
+      : s3DefaultAlertIconSet?.name || "";
+
+  const baseAlertIconsPath = s3PublicPath + "/" + s3AlertIconsFolder + "/" + alertIconsSet + "/";
+
+  const alertTypes = await prismaClient.alert_types.findMany();
+
+  const alertIcons = alertTypes.map((at) => {
+    return {
+      id: Number(at.id),
+      name: at.name,
+      icon: baseAlertIconsPath + at.id + ".png",
+    };
+  });
+
+  // console.log("ALERT ICONS:", alertIcons);
+  
 
   prismaClient.$disconnect();
 
@@ -1333,12 +1440,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     props: {
       loggedIn: session ? true : false,
       user: session ? session.user : null,
+      userProfile: session ? session.userProfile : null,
       currentEventSlug: evSlug,
       currentEvent: "",
       currentRallySlug: rallySlug,
       rallies: "",
       stageStatuses: superjson.stringify(stage_statuses),
       waypoint_types: superjson.stringify(waypoint_types),
+      waypoint_icons_set: superjson.stringify(waypoint_icons_set),
+      s3PublicPath: s3PublicPath,
+      s3WaypointIconsFolder: s3WaypointIconsFolder,
+      waypointIconsSet: waypointIconsSet,
+      alertIcons: alertIcons,
     },
   };
 };

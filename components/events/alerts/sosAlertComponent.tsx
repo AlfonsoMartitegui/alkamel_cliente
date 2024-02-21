@@ -10,6 +10,13 @@ import SosDetailsComponent from "./sosAlertDetailsComponent";
 import { stage } from "@prisma/client";
 import { millisToCurrentDate } from "server/shared/utils";
 import Image from "next/image";
+import { icon } from "@fortawesome/fontawesome-svg-core";
+
+interface AlertIcon {
+  id: number;
+  name: string;
+  icon: string;
+}
 
 interface sosAlertComponentProps {
   event: eventInfo | undefined;
@@ -18,6 +25,7 @@ interface sosAlertComponentProps {
   stages: stage[];
   onDetails: (e: React.MouseEvent<HTMLButtonElement>) => void;
   ppTrackerClient: PPTrackerDataServerIoClient;
+  alertIcons: AlertIcon[];
 }
 
 const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
@@ -44,40 +52,49 @@ const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
   }
   const getSosTypeAsString = (s: apiSosAlertMerge) => {
     const iconsVersion = "v4";
+    let iconText = "";
 
     if (s.subtype > 0) {
       switch (s.subtype) {
         case 1:
-          return (
-            <Image
-              src={`/maps/${iconsVersion}/alertIcons/sosFire.png`}
-              alt="SOS Fire"
-              height={35}
-              width={35}
-            />
-          );
+          iconText = "SOS Fire";
+          const icon = props.alertIcons.find((icon) => icon.name === iconText);
+          const iconUrl = icon
+            ? icon.icon
+            : `/maps/${iconsVersion}/alertIcons/sosFire.png`;
+          return <Image src={iconUrl} alt="SOS Fire" height={35} width={35} />;
         case 2:
+          iconText = "SOS Medical";
+          const icon2 = props.alertIcons.find((icon) => icon.name === iconText);
+          const iconUrl2 = icon2
+            ? icon2.icon
+            : `/maps/${iconsVersion}/alertIcons/sosMedical.png`;
           return (
-            <Image
-              src={`/maps/${iconsVersion}/alertIcons/sosMedical.png`}
-              alt="SOS Medical"
-              height={35}
-              width={35}
-            />
+            <Image src={iconUrl2} alt="SOS Medical" height={35} width={35} />
           );
         case 3:
+          iconText = "Mechanical Blocked";
+          const icon3 = props.alertIcons.find((icon) => icon.name === iconText);
+          const iconUrl3 = icon3
+            ? icon3.icon
+            : `/maps/${iconsVersion}/alertIcons/mechanicalBloqued.png`;
           return (
             <Image
-              src={`/maps/${iconsVersion}/alertIcons/mechanicalBloqued.png`}
+              src={iconUrl3}
               alt="Mechanical Blocked"
               height={35}
               width={35}
             />
           );
         case 4:
+          iconText = "Mechanical Not Blocked";
+          const icon4 = props.alertIcons.find((icon) => icon.name === iconText);
+          const iconUrl4 = icon4
+            ? icon4.icon
+            : `/maps/${iconsVersion}/alertIcons/mechanicalNotBlocked.png`;
           return (
             <Image
-              src={`/maps/${iconsVersion}/alertIcons/mechanicalNotBlocked.png`}
+              src={iconUrl4}
               alt="Mechanical Not Blocked"
               height={35}
               width={35}
@@ -87,16 +104,23 @@ const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
           return "SOS";
       }
     } else {
+      iconText = s.type == 0 ? "SOS" : "Mechanical";
+      const icon = props.alertIcons.find((icon) => icon.name === iconText);
+      const iconUrl = icon
+        ? icon.icon
+        : s.type == 0
+        ? `/maps/${iconsVersion}/alertIcons/sos.png`
+        : `/maps/${iconsVersion}/alertIcons/mechanical.png`;
       return s.type == 0 ? (
         <Image
-          src={`/maps/${iconsVersion}/alertIcons/sos.png`}
+          src={iconUrl}
           alt="SOS"
           height={35}
           width={35}
         />
       ) : (
         <Image
-          src={`/maps/${iconsVersion}/alertIcons/mechanical.png`}
+          src={iconUrl}
           alt="Mechanical"
           height={35}
           width={35}

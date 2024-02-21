@@ -7,11 +7,18 @@ import { millisToCurrentDate } from "server/shared/utils";
 import MessageDetailsComponent from "./messageDetailsComponent";
 import Image from "next/image";
 
+interface AlertIcon {
+  id: number;
+  name: string;
+  icon: string;
+}
+
 interface messageAlertProps {
   event: eventInfo | undefined;
   message: apiMessage;
   participants: participantInfo[];
   stages: stage[];
+  alertIcons: AlertIcon[];
 }
 
 const MessageComponent: React.FC<messageAlertProps> = (props) => {
@@ -45,12 +52,17 @@ const MessageComponent: React.FC<messageAlertProps> = (props) => {
   };
 
   const iconsVersion = "v4";
+  const iconText = "Message";
+  const icon = props.alertIcons.find((icon) => icon.name === iconText);
+  const iconUrl = icon
+    ? icon.icon
+    : `/maps/${iconsVersion}/alertIcons/message.png`;
 
   return (
     <tr>
       <td>
         <Image
-          src={`/maps/${iconsVersion}/alertIcons/message.png`}
+          src={iconUrl}
           alt="Message"
           height={35}
           width={35}
@@ -89,6 +101,7 @@ const MessageComponent: React.FC<messageAlertProps> = (props) => {
           alert={props.message}
           onHide={onHide}
           stages={props.stages}
+          alertIcons={props.alertIcons}
         />
       )}
     </tr>

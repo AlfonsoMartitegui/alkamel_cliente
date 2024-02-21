@@ -107,7 +107,7 @@ const Replay: NextPage<EventProps> = (props) => {
         name: "unknown",
         name_es: "unknown",
         name_en: "unknown",
-        default_apperture: 0,
+        default_apperture: 0n,
         default_inner_radio: 0,
         default_mandatory: 0,
         default_outer_radio: 0,

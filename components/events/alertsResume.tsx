@@ -22,6 +22,12 @@ import MessageComponent from "./alerts/messageComponent";
 import BlueFlagComponent from "./alerts/blueFlagComponent";
 import FiltersComponent from "./alerts/filtersComponent";
 
+interface AlertIcon {
+  id: number;
+  name: string;
+  icon: string;
+};
+
 interface AlertResumeProps {
   event: eventInfo | undefined;
   alerts: rallyAlert[];
@@ -30,6 +36,7 @@ interface AlertResumeProps {
   maxHeight: number;
   ppTrackerClient: PPTrackerDataServerIoClient;
   onCenterMapOnParticipant?: (participantId: number) => void;
+  alertIcons: AlertIcon[];
 }
 
 export interface AlertFilter {
@@ -172,6 +179,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
                       ppTrackerClient={props.ppTrackerClient}
                       stages={props.stages}
                       event={props.event}
+                      alertIcons={props.alertIcons}
                     />
                   )}
                   {p.alertType === 2 && (
@@ -181,6 +189,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
                       participants={props.participants}
                       stages={props.stages}
                       event={props.event}
+                      alertIcons={props.alertIcons}
                     />
                   )}
                   {p.alertType === 3 && (
@@ -191,6 +200,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
                       stages={props.stages}
                       event={props.event}
                       onCenterMapOnParticipant={onCenterMapOnParticipant}
+                      alertIcons={props.alertIcons}
                     />
                   )}
                   {p.alertType === 5 && (
@@ -200,6 +210,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
                       onDetails={onDetails}
                       stages={props.stages}
                       event={props.event}
+                      alertIcons={props.alertIcons}
                     />
                   )}
                   {p.alertType === 4 && (
@@ -208,6 +219,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
                       participants={props.participants}
                       stages={props.stages}
                       event={props.event}
+                      alertIcons={props.alertIcons}
                     />
                   )}
                 </Fragment>

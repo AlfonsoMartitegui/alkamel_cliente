@@ -31,6 +31,11 @@ interface EventBarProps {
         role: string;
       })
     | null;
+  userProfile: {
+    id: number;
+    roleid: number;
+    role: string;
+  };
 }
 
 const CurrentEventBar: React.FC<EventBarProps> = (props) => {
@@ -88,7 +93,8 @@ const CurrentEventBar: React.FC<EventBarProps> = (props) => {
             </Col>
           )}
         {props.user &&
-          props.user.role === "rc_operator" &&
+          props.userProfile &&
+          props.userProfile?.role === "Race Control Operator" &&
           (props.noNewMessage === undefined ||
             props.noNewMessage === false) && (
             <Col className="p-0 m-1 text-start">

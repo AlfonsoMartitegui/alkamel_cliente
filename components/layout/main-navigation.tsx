@@ -27,6 +27,7 @@ const MainNavigation: React.FC<{ timeZone: string }> = ({ timeZone }) => {
   const router = useRouter();
   //const { data: session, status } = useSession();
   console.log("SESSION??? ", session);
+  console.log("PATH????", router.asPath, "BASE:", router.basePath, "?", router.query);
   //console.log(router.asPath, "BASE:", router.basePath, "?", router.query);
   //console.log("router: ", router);
   //console.log("IS_VIEWER_MODE:", process.env.NEXT_PUBLIC_IS_VIEWER_MODE);
