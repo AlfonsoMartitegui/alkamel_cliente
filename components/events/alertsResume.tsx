@@ -1,6 +1,13 @@
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useState } from "react";
 import React from "react";
-import { Button, Row, Col, Table, Container } from "react-bootstrap";
+import {
+  Button,
+  Row,
+  Col,
+  Table,
+  Container,
+  Pagination,
+} from "react-bootstrap";
 import {
   apiBlueFlag,
   apiIncidence,
@@ -26,7 +33,7 @@ interface AlertIcon {
   id: number;
   name: string;
   icon: string;
-};
+}
 
 interface AlertResumeProps {
   event: eventInfo | undefined;
@@ -115,6 +122,13 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
   //   } else return true;
   // };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = props.alerts.slice(indexOfFirstItem, indexOfLastItem);
+
   return (
     <Fragment>
       <Row id="alertsTitle" className="bg-secondary p-1 fw-bold mx-0 px-0">
@@ -140,7 +154,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
           hover
           responsive
           variant="dark"
-          className="m-0 p-0"
+          className="m-0 p-0 mb-2"
         >
           <thead>
             <tr>
@@ -151,7 +165,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
             </tr>
           </thead>
           <tbody>
-            {props.alerts
+            {currentItems
               .sort((a, b) => {
                 if (a.time === b.time) {
                   if (a.alertType < b.alertType) return 1;
@@ -226,6 +240,25 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
               ))}
           </tbody>
         </Table>
+        <div>
+          <Pagination className="justify-content-center">
+            <Pagination.Prev
+              onClick={() =>
+                setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
+              }
+            />
+            <Pagination.Item>{currentPage}</Pagination.Item>
+            <Pagination.Next
+              onClick={() =>
+                setCurrentPage(
+                  currentPage < Math.ceil(props.alerts.length / itemsPerPage)
+                    ? currentPage + 1
+                    : currentPage
+                )
+              }
+            />
+          </Pagination>
+        </div>
         {showFilters && (
           <FiltersComponent
             filters={alertFilters}
