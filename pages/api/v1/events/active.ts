@@ -1,11 +1,25 @@
 import { apiEvent } from "lib/apiV1Schema";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { ppTrackerClient } from "../../../../server/ppTrackerdataServerIoClient";
+import { checkLocalRegister } from "lib/tokenAuth";
 
-type Data = apiEvent[];
+type Data = apiEvent[] | { error: string };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<Data>) => {
   if (req.method == "GET") {
+    // ejemplo();
+
+    const auth = await checkLocalRegister(req.query.auth as string, "active");
+    if (auth) {
+      console.log(auth);
+    }
+
+    if (auth.Message !== "Success") {
+      res.status(401).json({ error: auth.Message });
+      console.log("Not authorized");
+      return;
+    }
+
     if (!ppTrackerClient.isStarted) {
       console.log(">>>>>  STARTING SOCKET CLIENT....????????????");
       ppTrackerClient.join("waypointEvents");

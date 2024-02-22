@@ -8,6 +8,7 @@ import {
 } from "lib/apiV1Schema";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { ppTrackerClient } from "../../../../server/ppTrackerdataServerIoClient";
+import { checkLocalRegister } from "lib/tokenAuth";
 
 type Data =
   | apiStage[]
@@ -15,7 +16,8 @@ type Data =
   | apiParticipant[]
   | apiRally
   | apiErrorMessage
-  | apiParticipantWaypointTimes[];
+  | apiParticipantWaypointTimes[]
+  | { error: string };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<Data>) => {
   console.log("GET Events Info for Event Slug:", req.query, req.query.auth);
@@ -27,6 +29,17 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<Data>) => {
 
   if (req.method == "GET") {
     const slug = req.query.slug;
+    const auth = await checkLocalRegister(req.query.auth as string, slug as string);
+    if (auth) {
+      console.log(auth);
+    }
+
+    if (auth.Message !== "Success") {
+      res.status(401).json({ error: auth.Message });
+      console.log("Not authorized");
+      return;
+    }
+    
     console.log("NEW 'event slug' request for >>>>>>>", slug);
     if (Array.isArray(slug)) {
       if (slug.length === 1) {
