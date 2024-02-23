@@ -117,6 +117,7 @@ const BlueFlagComponent: React.FC<blueFlagProps> = (props) => {
           blueFlag={props.blueFlag}
           onHide={onHide}
           stages={props.stages}
+          iconUrl={iconUrl}
         />
       )}
     </tr>

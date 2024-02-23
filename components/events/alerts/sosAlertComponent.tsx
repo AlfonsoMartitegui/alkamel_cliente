@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { apiSosAlertMerge } from "server/shared/socket_io_packets";
 import {
   eventInfo,
@@ -11,6 +11,7 @@ import { stage } from "@prisma/client";
 import { millisToCurrentDate } from "server/shared/utils";
 import Image from "next/image";
 import { icon } from "@fortawesome/fontawesome-svg-core";
+import styles from "./sosAlertComponent.module.css";
 
 interface AlertIcon {
   id: number;
@@ -26,6 +27,7 @@ interface sosAlertComponentProps {
   onDetails: (e: React.MouseEvent<HTMLButtonElement>) => void;
   ppTrackerClient: PPTrackerDataServerIoClient;
   alertIcons: AlertIcon[];
+  onParticipantClick: (participantNumber: string) => void;
 }
 
 const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
@@ -112,19 +114,9 @@ const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
         ? `/maps/${iconsVersion}/alertIcons/sos.png`
         : `/maps/${iconsVersion}/alertIcons/mechanical.png`;
       return s.type == 0 ? (
-        <Image
-          src={iconUrl}
-          alt="SOS"
-          height={35}
-          width={35}
-        />
+        <Image src={iconUrl} alt="SOS" height={35} width={35} />
       ) : (
-        <Image
-          src={iconUrl}
-          alt="Mechanical"
-          height={35}
-          width={35}
-        />
+        <Image src={iconUrl} alt="Mechanical" height={35} width={35} />
       );
     }
   };
@@ -140,12 +132,40 @@ const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
   return (
     <tr>
       <td>{getSosTypeAsString(props.alert)}</td>
-      <td>{getParticipantIdNumber(BigInt(props.alert.participant))}</td>
+      {/* <td>{getParticipantIdNumber(BigInt(props.alert.participant))}</td> */}
       <td>
-        {millisToCurrentDate(props.alert.time, evOffsetMillis, "DATE_TIME")}
+        <Button
+          onClick={() =>
+            props.onParticipantClick(
+              getParticipantIdNumber(BigInt(props.alert.participant))
+            )
+          }
+          className={`py-0 px-1`}
+          size="sm"
+          variant="danger"
+          type="button"
+          // style={{ border: "none", background: "none", color: "white", width: "100%", height: "100%"}}
+        >
+          {getParticipantIdNumber(BigInt(props.alert.participant))}
+        </Button>
       </td>
       <td>
-        At {props.alert.lat / 10000000}, {props.alert.lon / 10000000}
+        <div
+          className={
+            !props.alert.ack_time && !props.alert.end_time ? styles.invalid : ""
+          }
+        >
+          {millisToCurrentDate(props.alert.time, evOffsetMillis, "DATE_TIME")}
+        </div>
+      </td>
+      <td>
+        <div
+          className={
+            !props.alert.ack_time && !props.alert.end_time ? styles.invalid : ""
+          }
+        >
+          At {props.alert.lat / 10000000}, {props.alert.lon / 10000000}
+        </div>
       </td>
       <td>
         <Button
@@ -172,6 +192,7 @@ const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
           alert={props.alert}
           onHide={onHide}
           stages={props.stages}
+          alertIcons={props.alertIcons}
         />
       )}
     </tr>

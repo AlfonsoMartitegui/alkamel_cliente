@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import React from "react";
+import styles from "./sosAlertComponent.module.css";
 import {
   Button,
   Row,
@@ -44,6 +45,7 @@ interface AlertResumeProps {
   ppTrackerClient: PPTrackerDataServerIoClient;
   onCenterMapOnParticipant?: (participantId: number) => void;
   alertIcons: AlertIcon[];
+  onParticipantClick: (participantNumber: string) => void;
 }
 
 export interface AlertFilter {
@@ -194,6 +196,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
                       stages={props.stages}
                       event={props.event}
                       alertIcons={props.alertIcons}
+                      onParticipantClick={props.onParticipantClick}
                     />
                   )}
                   {p.alertType === 2 && (

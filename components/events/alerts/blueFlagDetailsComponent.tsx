@@ -14,6 +14,7 @@ interface BlueFlagDetailsProps {
   participants: participantInfo[];
   stages: stage[];
   onHide: () => void;
+  iconUrl: string;
 }
 
 const BlueFlagDetailsComponent: React.FC<BlueFlagDetailsProps> = (props) => {
@@ -76,7 +77,7 @@ const BlueFlagDetailsComponent: React.FC<BlueFlagDetailsProps> = (props) => {
           <Row>
             <Col className="col-auto">
               <Image
-                src={`/maps/${iconsVersion}/alertIcons/blueFlag.png`}
+                src={props.iconUrl || `/maps/${iconsVersion}/alertIcons/blueFlag.png`}
                 alt="Message"
                 height={35}
                 width={35}

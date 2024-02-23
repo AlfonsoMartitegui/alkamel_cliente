@@ -1,10 +1,11 @@
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   eventInfo,
   participantInfo,
   PPTrackerDataServerIoClient,
 } from "server/ppTrackerdataServerIoClient";
-import { Button, Modal, Container, Table } from "react-bootstrap";
+import { Button, Modal, Container, Table, Row, Col } from "react-bootstrap";
 import { apiLogResponse, logLine } from "server/shared/apiSharedTypes";
 import {
   apiSosAlertMerge,
@@ -13,6 +14,13 @@ import {
 import LogViewer from "components/utils/logViewer";
 import { stage } from "@prisma/client";
 import { millisToCurrentDate } from "server/shared/utils";
+import { get } from "http";
+
+interface AlertIcon {
+  id: number;
+  name: string;
+  icon: string;
+}
 
 interface sendMessageProps {
   ev: eventInfo | undefined;
@@ -21,10 +29,12 @@ interface sendMessageProps {
   stages: stage[];
   ppTrackerClient: PPTrackerDataServerIoClient;
   onHide: () => void;
+  alertIcons: AlertIcon[];
 }
 
 const SosDetailsComponent: React.FC<sendMessageProps> = (props) => {
   console.log("props.alert:", props.alert);
+  const iconsVersion = "v4";
   const evOffsetMillis = props.ev ? props.ev.offsetGMT * 3600000 : 0;
   const participantsById = new Map<BigInt, participantInfo>();
   const stagesMap = new Map<number, stage>();
@@ -116,13 +126,59 @@ const SosDetailsComponent: React.FC<sendMessageProps> = (props) => {
     }
   };
 
+  const getSosTypeIcon = (s: apiSosAlertMerge) => {
+    console.log("Sos Type: ", s.type, " SybTypoe:", s.subtype);
+    if (s.subtype > 0) {
+      switch (s.subtype) {
+        case 1:
+          const icon = props.alertIcons.find((icon) => icon.name === "SOS Fire");
+          const iconUrl = icon ? icon.icon : `/maps/${iconsVersion}/alertIcons/sosFire.png`;
+          return iconUrl;
+        case 2:
+          const icon2 = props.alertIcons.find((icon) => icon.name === "SOS Medical");
+          const iconUrl2 = icon2 ? icon2.icon : `/maps/${iconsVersion}/alertIcons/sosMedical.png`;
+          return iconUrl2;
+        case 3:
+          const icon3 = props.alertIcons.find((icon) => icon.name === "Mechanical Blocked");
+          const iconUrl3 = icon3 ? icon3.icon : `/maps/${iconsVersion}/alertIcons/mechanicalBloqued.png`;
+          return iconUrl3;
+        case 4:
+          const icon4 = props.alertIcons.find((icon) => icon.name === "Mechanical Not Blocked");
+          const iconUrl4 = icon4 ? icon4.icon : `/maps/${iconsVersion}/alertIcons/mechanicalNotBlocked.png`;
+          return iconUrl4;
+        default:
+          const defaultIcon = props.alertIcons.find((icon) => icon.name === "SOS");
+          const defaultIconUrl = defaultIcon ? defaultIcon.icon : `/maps/${iconsVersion}/alertIcons/sos.png`;
+          return defaultIconUrl;
+      }
+    } else {
+      const icon = props.alertIcons.find((icon) => icon.name === "SOS");
+      const iconUrl = icon ? icon.icon : `/maps/${iconsVersion}/alertIcons/sos.png`;
+      const icon2 = props.alertIcons.find((icon) => icon.name === "Mechanical");
+      const iconUrl2 = icon2 ? icon2.icon : `/maps/${iconsVersion}/alertIcons/mechanical.png`;
+      return s.type === 0 ? iconUrl : iconUrl2;
+    }
+  };
+
   return (
     <Modal show={true} onHide={props.onHide} dialogClassName="sosDetailsModal">
       <Modal.Header
         className="bg-dark text-light border border-light"
         closeButton
       >
-        <Modal.Title>S.O.S. Details</Modal.Title>
+        <Modal.Title>
+          <Row>
+          <Col className="col-auto">
+            <Image
+              src={getSosTypeIcon(props.alert)}
+              alt="Message"
+              height={35}
+              width={35}
+            />
+            </Col>
+            <Col>S.O.S. Details</Col>
+          </Row>
+        </Modal.Title>
       </Modal.Header>
       <Modal.Body className="bg-dark text-light border border-light">
         <Container>

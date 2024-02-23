@@ -694,6 +694,14 @@ const Rally: NextPage<EventProps> = (props) => {
     }
   };
 
+  const onParticipantClick2 = (participantNumber: string) => {
+    setShowParticipantDetails(true);
+    const part = ppTrackerClient.getRallyParticipantWithNumber(Number(rally?.id), participantNumber);
+    setSelectedParticipant(part);
+    setCurrentParticipantInfo(findParticipantInfoForId(part?.id));
+    centerMapOnParticipantNumber(participantNumber);
+  };
+
   const centerMapOnParticipantNumber = (participantNumber: string) => {
     if (rally) {
       const participant = ppTrackerClient.getRallyParticipantWithNumber(
@@ -1278,6 +1286,7 @@ const Rally: NextPage<EventProps> = (props) => {
                   ppTrackerClient={ppTrackerClient}
                   onCenterMapOnParticipant={onCenterMapOnParticipant}
                   alertIcons={props.alertIcons}
+                  onParticipantClick={onParticipantClick2}
                 ></AlertsResume>
               </Col>
             ) : (

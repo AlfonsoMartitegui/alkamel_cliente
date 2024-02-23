@@ -1,0 +1,25 @@
+/* sosAlertComponent.module.css */
+
+@-webkit-keyframes invalid {
+    from { background-color: red; }
+    to { background-color: inherit; }
+  }
+  @-moz-keyframes invalid {
+    from { background-color: red; }
+    to { background-color: inherit; }
+  }
+  @-o-keyframes invalid {
+    from { background-color: red; }
+    to { background-color: inherit; }
+  }
+  @keyframes invalid {
+    from { background-color: red; }
+    to { background-color: inherit; }
+  }
+  .invalid {
+    -webkit-animation: invalid 1s infinite !important; 
+    -moz-animation:    invalid 1s infinite !important; 
+    -o-animation:      invalid 1s infinite !important; 
+    animation:         invalid 1s infinite !important; 
+  }
+
