@@ -1,6 +1,6 @@
 import type { NextPage, GetServerSideProps } from "next";
 import Head from "next/head";
-import { getSession } from "next-auth/react";
+import { getSession, useSession } from "next-auth/react";
 import { Container, Row, Col } from "react-bootstrap";
 import CSS from "csstype";
 import superjson from "superjson";
@@ -119,6 +119,9 @@ const Rally: NextPage<EventProps> = (props) => {
     return participantMarkers;
   };
   const markers = initMarkers();
+
+  const session = useSession();
+  const profile = session ? session.data?.userProfile : null;
 
   const getParticipantMarkerTextColorByStatus = (pInfo: participantInfo) => {
     if (pInfo.is_officialcar) {
@@ -1044,19 +1047,19 @@ const Rally: NextPage<EventProps> = (props) => {
     }
   };
 
-  const hasFilteredAlerts = () => {    
-    const filteredAlerts = rallyAlerts.filter(alert => {
-      if ('ack_time' in alert.alert && 'end_time' in alert.alert) {
+  const hasFilteredAlerts = () => {
+    const filteredAlerts = rallyAlerts.filter((alert) => {
+      if ("ack_time" in alert.alert && "end_time" in alert.alert) {
         // alert es de tipo apiSosAlertMerge
         return !alert.alert.ack_time && !alert.alert.end_time;
       }
       return false; // Si alert no es de tipo apiSosAlertMerge, incluir en los resultados
     });
 
-    if(filteredAlerts.length > 0) {
+    if (filteredAlerts.length > 0) {
       return true;
     }
-    console.log('filteredAlerts', filteredAlerts.length, filteredAlerts);
+    console.log("filteredAlerts", filteredAlerts.length, filteredAlerts);
     return false;
   };
 
@@ -1290,7 +1293,7 @@ const Rally: NextPage<EventProps> = (props) => {
               {/* Basic form for controlling center and zoom of map. */}
               {/*form*/}
             </Col>
-            {showAlertsBar || alertsExist ? (
+            { profile && (showAlertsBar || alertsExist) ? (
               <Col
                 xs="12"
                 sm="12"
@@ -1301,9 +1304,27 @@ const Rally: NextPage<EventProps> = (props) => {
                 className="bg-dark px-0"
                 ref={alertsDiv}
               >
-                {alertsExist && (
-                  <div className="mb-2" style={{ height: '400px', overflow: 'auto' }}>
-                  <AlertsResume2
+                {alertsExist && (profile && profile.role === "Race Control Operator" || profile.role === "Race Control Viewer") && (
+                  <div
+                    className="mb-2"
+                    style={{ height: "400px", overflow: "auto" }}
+                  >
+                    <AlertsResume2
+                      event={activeEvent}
+                      maxHeight={contentHeight}
+                      alerts={rallyAlerts}
+                      participants={participants}
+                      stages={rally ? rally.stages : []}
+                      ppTrackerClient={ppTrackerClient}
+                      onCenterMapOnParticipant={onCenterMapOnParticipant}
+                      alertIcons={props.alertIcons}
+                      onParticipantClick={onParticipantClick2}
+                    ></AlertsResume2>
+                  </div>
+                )}
+
+                {showAlertsBar && (
+                  <AlertsResume
                     event={activeEvent}
                     maxHeight={contentHeight}
                     alerts={rallyAlerts}
@@ -1313,23 +1334,8 @@ const Rally: NextPage<EventProps> = (props) => {
                     onCenterMapOnParticipant={onCenterMapOnParticipant}
                     alertIcons={props.alertIcons}
                     onParticipantClick={onParticipantClick2}
-                  ></AlertsResume2>
-                  </div>
+                  ></AlertsResume>
                 )}
-
-                {showAlertsBar && (
-                  <AlertsResume
-                  event={activeEvent}
-                  maxHeight={contentHeight}
-                  alerts={rallyAlerts}
-                  participants={participants}
-                  stages={rally ? rally.stages : []}
-                  ppTrackerClient={ppTrackerClient}
-                  onCenterMapOnParticipant={onCenterMapOnParticipant}
-                  alertIcons={props.alertIcons}
-                  onParticipantClick={onParticipantClick2}
-                ></AlertsResume>
-                )}   
               </Col>
             ) : (
               ""
