@@ -20,6 +20,7 @@ interface incidenceAlertProps {
   onDetails: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onCenterMapOnParticipant?: (participantId: number) => void;
   alertIcons: AlertIcon[];
+  onParticipantClick: (participantNumber: string) => void;
 }
 
 const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
@@ -61,12 +62,7 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
           ? icon.icon
           : `/maps/${iconsVersion}/alertIcons/overspeeding.png`;
         return (
-          <Image
-            src={iconUrl}
-            alt="Overspeeding"
-            height={35}
-            width={35}
-          />
+          <Image src={iconUrl} alt="Overspeeding" height={35} width={35} />
         );
       case 2:
         iconText = "Reverse";
@@ -74,28 +70,14 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
         const iconUrl2 = icon2
           ? icon2.icon
           : `/maps/${iconsVersion}/alertIcons/reverse.png`;
-        return (
-          <Image
-            src={iconUrl2}
-            alt="Stop Zone"
-            height={35}
-            width={35}
-          />
-        );
+        return <Image src={iconUrl2} alt="Stop Zone" height={35} width={35} />;
       case 3:
         iconText = "Stop Zone";
         const icon3 = props.alertIcons.find((icon) => icon.name === iconText);
         const iconUrl3 = icon3
           ? icon3.icon
           : `/maps/${iconsVersion}/alertIcons/stopZone.png`;
-        return (
-          <Image
-            src={iconUrl3}
-            alt="Stop Zone"
-            height={35}
-            width={35}
-          />
-        );
+        return <Image src={iconUrl3} alt="Stop Zone" height={35} width={35} />;
       case 4:
         iconText = "DN Min Time";
         const icon4 = props.alertIcons.find((icon) => icon.name === iconText);
@@ -103,12 +85,7 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
           ? icon4.icon
           : `/maps/${iconsVersion}/alertIcons/dnMinTime.png`;
         return (
-          <Image
-            src={iconUrl4}
-            alt="DN Min Time"
-            height={35}
-            width={35}
-          />
+          <Image src={iconUrl4} alt="DN Min Time" height={35} width={35} />
         );
       case 5:
         iconText = "DN Max Time";
@@ -117,12 +94,7 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
           ? icon5.icon
           : `/maps/${iconsVersion}/alertIcons/dnMaxTime.png`;
         return (
-          <Image
-            src={iconUrl5}
-            alt="DN Max Time"
-            height={35}
-            width={35}
-          />
+          <Image src={iconUrl5} alt="DN Max Time" height={35} width={35} />
         );
       case 6:
         iconText = "DN Invalid Exit";
@@ -131,12 +103,7 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
           ? icon6.icon
           : `/maps/${iconsVersion}/alertIcons/dnInvalidExit.png`;
         return (
-          <Image
-            src={iconUrl6}
-            alt="DN Invalid Exit"
-            height={35}
-            width={35}
-          />
+          <Image src={iconUrl6} alt="DN Invalid Exit" height={35} width={35} />
         );
       case 7:
         iconText = "DN Overspeeding";
@@ -145,12 +112,7 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
           ? icon7.icon
           : `/maps/${iconsVersion}/alertIcons/dnOverspeeding.png`;
         return (
-          <Image
-            src={iconUrl7}
-            alt="DN Overspeeding"
-            height={35}
-            width={35}
-          />
+          <Image src={iconUrl7} alt="DN Overspeeding" height={35} width={35} />
         );
       case 8:
         iconText = "WP Missed";
@@ -158,14 +120,7 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
         const iconUrl8 = icon8
           ? icon8.icon
           : `/maps/${iconsVersion}/alertIcons/wpMissed.png`;
-        return (
-          <Image
-            src={iconUrl8}
-            alt="WP Missed"
-            height={35}
-            width={35}
-          />
-        );
+        return <Image src={iconUrl8} alt="WP Missed" height={35} width={35} />;
       case 9:
         iconText = "DZ Overspeeding";
         const icon9 = props.alertIcons.find((icon) => icon.name === iconText);
@@ -173,12 +128,7 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
           ? icon9.icon
           : `/maps/${iconsVersion}/alertIcons/dzOverspeeding.png`;
         return (
-          <Image
-            src={iconUrl9}
-            alt="DZ Overspeeding"
-            height={35}
-            width={35}
-          />
+          <Image src={iconUrl9} alt="DZ Overspeeding" height={35} width={35} />
         );
       case 10:
         iconText = "Forbidden Waypoint";
@@ -200,28 +150,14 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
         const iconUrl11 = icon11
           ? icon11.icon
           : `/maps/${iconsVersion}/alertIcons/stopped.png`;
-        return (
-          <Image
-            src={iconUrl11}
-            alt="Stopped"
-            height={35}
-            width={35}
-          />
-        );
+        return <Image src={iconUrl11} alt="Stopped" height={35} width={35} />;
       default:
         iconText = "Unknown";
         const icon12 = props.alertIcons.find((icon) => icon.name === iconText);
         const iconUrl12 = icon12
           ? icon12.icon
           : `/maps/${iconsVersion}/alertIcons/unknown.png`;
-        return (
-          <Image
-            src={iconUrl12}
-            alt="Unknown"
-            height={35}
-            width={35}
-          />
-        );
+        return <Image src={iconUrl12} alt="Unknown" height={35} width={35} />;
     }
   };
 
@@ -274,7 +210,23 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
   return (
     <tr>
       <td>{getIncidenceTypeAsString(props.incidence)}</td>
-      <td>{getParticipantIdNumber(BigInt(props.incidence.participantId))}</td>
+      <td>
+        <Button
+          onClick={() =>
+            props.onParticipantClick(
+              getParticipantIdNumber(BigInt(props.incidence.participantId))
+            )
+          }
+          className={`py-0 px-1`}
+          size="sm"
+          variant="warning"
+          type="button"
+          // style={{ border: "none", background: "none", color: "white", width: "100%", height: "100%"}}
+        >
+          {getParticipantIdNumber(BigInt(props.incidence.participantId))}
+        </Button>
+      </td>
+
       <td>
         {millisToCurrentDate(
           props.incidence.startTime,

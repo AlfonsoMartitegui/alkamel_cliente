@@ -29,6 +29,7 @@ import IncidenceComponent from "./alerts/incidenceComponent";
 import MessageComponent from "./alerts/messageComponent";
 import BlueFlagComponent from "./alerts/blueFlagComponent";
 import FiltersComponent from "./alerts/filtersComponent";
+import SosAlertComponent2 from "./alerts/sosAlertComponent2";
 
 interface AlertIcon {
   id: number;
@@ -56,7 +57,7 @@ export interface AlertFilter {
   showFlagAlerts: boolean;
 }
 
-const AlertsResume: React.FC<AlertResumeProps> = (props) => {
+const AlertsResume2: React.FC<AlertResumeProps> = (props) => {
   useEffect(() => {
     console.log(
       ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> NEW ALERTS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",
@@ -129,20 +130,28 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = props.alerts.slice(indexOfFirstItem, indexOfLastItem);
+  const filteredAlerts = props.alerts.filter(alert => {
+    if ('ack_time' in alert.alert && 'end_time' in alert.alert) {
+      // alert es de tipo apiSosAlertMerge
+      return !alert.alert.ack_time && !alert.alert.end_time;
+    }
+    return false; // Si alert no es de tipo apiSosAlertMerge, incluir en los resultados
+  });
+  // console.log('filteredAlerts', filteredAlerts.length, filteredAlerts);
+  const currentItems = filteredAlerts.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <Fragment>
       <Row id="alertsTitle" className="bg-secondary p-1 fw-bold mx-0 px-0">
-        <Col className="pt-1 mt-2 fs-5">ALERTS RESUME</Col>
+        <Col className="pt-1 mt-2 fs-5">ALERTS</Col>
         <Col className=" col-auto text-end pe-0 ps-1">
-          <Button
+          {/* <Button
             variant="secondary-50"
             className="btn-sm fw-bold"
             onClick={onShowFilters}
           >
             FILTERS
-          </Button>
+          </Button> */}
         </Col>
       </Row>
       <Container
@@ -188,54 +197,11 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
               .map((p, index) => (
                 <Fragment key={index}>
                   {p.alertType === 1 && (
-                    <SosAlertComponent
+                    <SosAlertComponent2
                       alert={p.alert as apiSosAlertMerge}
                       participants={props.participants}
                       onDetails={onDetails}
                       ppTrackerClient={props.ppTrackerClient}
-                      stages={props.stages}
-                      event={props.event}
-                      alertIcons={props.alertIcons}
-                      onParticipantClick={props.onParticipantClick}
-                    />
-                  )}
-                  {p.alertType === 2 && (
-                    <FlagAlertComponent
-                      alert={p.alert as flagAlert}
-                      onDetails={onDetails}
-                      participants={props.participants}
-                      stages={props.stages}
-                      event={props.event}
-                      alertIcons={props.alertIcons}
-                      onParticipantClick={props.onParticipantClick}
-                    />
-                  )}
-                  {p.alertType === 3 && (
-                    <IncidenceComponent
-                      incidence={p.alert as apiIncidence}
-                      participants={props.participants}
-                      onDetails={onDetails}
-                      stages={props.stages}
-                      event={props.event}
-                      onCenterMapOnParticipant={onCenterMapOnParticipant}
-                      alertIcons={props.alertIcons}
-                      onParticipantClick={props.onParticipantClick}
-                    />
-                  )}
-                  {p.alertType === 5 && (
-                    <BlueFlagComponent
-                      blueFlag={p.alert as apiBlueFlag}
-                      participants={props.participants}
-                      onDetails={onDetails}
-                      stages={props.stages}
-                      event={props.event}
-                      alertIcons={props.alertIcons}
-                    />
-                  )}
-                  {p.alertType === 4 && (
-                    <MessageComponent
-                      message={p.alert as apiMessage}
-                      participants={props.participants}
                       stages={props.stages}
                       event={props.event}
                       alertIcons={props.alertIcons}
@@ -257,7 +223,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
             <Pagination.Next
               onClick={() =>
                 setCurrentPage(
-                  currentPage < Math.ceil(props.alerts.length / itemsPerPage)
+                  currentPage < Math.ceil(filteredAlerts.length / itemsPerPage)
                     ? currentPage + 1
                     : currentPage
                 )
@@ -277,4 +243,4 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
   );
 };
 
-export default AlertsResume;
+export default AlertsResume2;

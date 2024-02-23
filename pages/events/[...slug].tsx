@@ -45,12 +45,14 @@ import {
   initWaypointIconMarkers2,
 } from "components/events/maps/resources";
 import { Alert } from "bootstrap";
+import AlertsResume2 from "components/events/alertsResume2";
+import { get } from "http";
 
 interface AlertIcon {
   id: number;
   name: string;
   icon: string;
-};
+}
 
 interface EventProps {
   loggedIn: boolean;
@@ -354,6 +356,7 @@ const Rally: NextPage<EventProps> = (props) => {
   );
   const [participants, setParticipants] = React.useState<participantInfo[]>([]);
   const [rallyAlerts, setRallyAlerts] = React.useState<rallyAlert[]>([]);
+  // const [filteredRallyAlerts, setFilteredRallyAlerts] = React.useState<rallyAlert[]>([]);
   //const [sosAlerts, setSosAlerts] = React.useState<apiSosAlert[]>([]);
   //const [sosTypeData, setSosTypeData] = React.useState<apiSosTypeData[]>([]);
   const [currentParticipantInfo, setCurrentParticipantInfo] = React.useState<
@@ -696,7 +699,10 @@ const Rally: NextPage<EventProps> = (props) => {
 
   const onParticipantClick2 = (participantNumber: string) => {
     setShowParticipantDetails(true);
-    const part = ppTrackerClient.getRallyParticipantWithNumber(Number(rally?.id), participantNumber);
+    const part = ppTrackerClient.getRallyParticipantWithNumber(
+      Number(rally?.id),
+      participantNumber
+    );
     setSelectedParticipant(part);
     setCurrentParticipantInfo(findParticipantInfoForId(part?.id));
     centerMapOnParticipantNumber(participantNumber);
@@ -1038,6 +1044,24 @@ const Rally: NextPage<EventProps> = (props) => {
     }
   };
 
+  const hasFilteredAlerts = () => {    
+    const filteredAlerts = rallyAlerts.filter(alert => {
+      if ('ack_time' in alert.alert && 'end_time' in alert.alert) {
+        // alert es de tipo apiSosAlertMerge
+        return !alert.alert.ack_time && !alert.alert.end_time;
+      }
+      return false; // Si alert no es de tipo apiSosAlertMerge, incluir en los resultados
+    });
+
+    if(filteredAlerts.length > 0) {
+      return true;
+    }
+    console.log('filteredAlerts', filteredAlerts.length, filteredAlerts);
+    return false;
+  };
+
+  const alertsExist = hasFilteredAlerts();
+
   useEffect(() => {
     updateMapSize();
   }, [showAlertsBar, showEntryListBar, showItineraryBar, showOfficialCarsBar]);
@@ -1266,7 +1290,7 @@ const Rally: NextPage<EventProps> = (props) => {
               {/* Basic form for controlling center and zoom of map. */}
               {/*form*/}
             </Col>
-            {showAlertsBar ? (
+            {showAlertsBar || alertsExist ? (
               <Col
                 xs="12"
                 sm="12"
@@ -1277,7 +1301,24 @@ const Rally: NextPage<EventProps> = (props) => {
                 className="bg-dark px-0"
                 ref={alertsDiv}
               >
-                <AlertsResume
+                {alertsExist && (
+                  <div className="mb-2" style={{ height: '400px', overflow: 'auto' }}>
+                  <AlertsResume2
+                    event={activeEvent}
+                    maxHeight={contentHeight}
+                    alerts={rallyAlerts}
+                    participants={participants}
+                    stages={rally ? rally.stages : []}
+                    ppTrackerClient={ppTrackerClient}
+                    onCenterMapOnParticipant={onCenterMapOnParticipant}
+                    alertIcons={props.alertIcons}
+                    onParticipantClick={onParticipantClick2}
+                  ></AlertsResume2>
+                  </div>
+                )}
+
+                {showAlertsBar && (
+                  <AlertsResume
                   event={activeEvent}
                   maxHeight={contentHeight}
                   alerts={rallyAlerts}
@@ -1288,6 +1329,7 @@ const Rally: NextPage<EventProps> = (props) => {
                   alertIcons={props.alertIcons}
                   onParticipantClick={onParticipantClick2}
                 ></AlertsResume>
+                )}   
               </Col>
             ) : (
               ""
@@ -1427,7 +1469,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       ? currentRallyAlertIconsSetFolder
       : s3DefaultAlertIconSet?.name || "";
 
-  const baseAlertIconsPath = s3PublicPath + "/" + s3AlertIconsFolder + "/" + alertIconsSet + "/";
+  const baseAlertIconsPath =
+    s3PublicPath + "/" + s3AlertIconsFolder + "/" + alertIconsSet + "/";
 
   const alertTypes = await prismaClient.alert_types.findMany();
 
@@ -1440,7 +1483,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   });
 
   // console.log("ALERT ICONS:", alertIcons);
-  
 
   prismaClient.$disconnect();
 

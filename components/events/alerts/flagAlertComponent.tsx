@@ -21,6 +21,7 @@ interface flagAlertProps {
   stages: stage[];
   onDetails: (e: React.MouseEvent<HTMLButtonElement>) => void;
   alertIcons: AlertIcon[];
+  onParticipantClick: (participantNumber: string) => void;
 }
 
 const FlagAlertComponent: React.FC<flagAlertProps> = (props) => {

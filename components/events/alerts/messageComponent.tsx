@@ -19,6 +19,7 @@ interface messageAlertProps {
   participants: participantInfo[];
   stages: stage[];
   alertIcons: AlertIcon[];
+  onParticipantClick: (participantNumber: string) => void;
 }
 
 const MessageComponent: React.FC<messageAlertProps> = (props) => {
@@ -68,7 +69,22 @@ const MessageComponent: React.FC<messageAlertProps> = (props) => {
           width={35}
         />
       </td>
-      <td>{getParticipantIdNumber(BigInt(props.message.participant))}</td>
+      <td>
+      <Button
+          onClick={() =>
+            props.onParticipantClick(
+              getParticipantIdNumber(BigInt(props.message.participant))
+            )
+          }
+          className={`py-0 px-1`}
+          size="sm"
+          variant="success"
+          type="button"
+          // style={{ border: "none", background: "none", color: "white", width: "100%", height: "100%"}}
+        >
+        {getParticipantIdNumber(BigInt(props.message.participant))}
+        </Button>
+        </td>
       <td>
         {millisToCurrentDate(
           props.message.message_time,
