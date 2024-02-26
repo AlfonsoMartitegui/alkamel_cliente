@@ -232,6 +232,7 @@ interface MapProps extends google.maps.MapOptions {
   centerChanged?: (map: google.maps.Map) => void;
   dragStart?: () => void;
   kmlTrack?: google.maps.KmlLayer;
+  rckmlTrack?: google.maps.KmlLayer;
   centerTo: google.maps.LatLngLiteral | null;
 }
 
@@ -245,6 +246,7 @@ const TrackingMap: React.FC<MapProps> = ({
   children,
   style,
   kmlTrack,
+  rckmlTrack,
   ...options
 }) => {
   //console.log("MAP REPAINT????");
@@ -312,10 +314,20 @@ const TrackingMap: React.FC<MapProps> = ({
     if (kmlTrack) {
       if (map) {
         //console.log("SETTING MAP....", new Date().toLocaleString());
+        console.log("SETTING KML TRACK....", kmlTrack)
         kmlTrack.setMap(map);
       }
     }
   }, [kmlTrack, map]);
+
+  React.useEffect(() => {
+    if (rckmlTrack) {
+      if (map) {
+        console.log("SETTING RC KML TRACK....", rckmlTrack)
+        rckmlTrack.setMap(map);
+      }
+    }
+  }, [rckmlTrack, map]);
 
   return (
     <Fragment>
@@ -323,7 +335,7 @@ const TrackingMap: React.FC<MapProps> = ({
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
           // set the map prop on the child component
-          return React.cloneElement(child, { map });
+          return React.cloneElement(child, { map } as { map: google.maps.Map });
         }
       })}
     </Fragment>

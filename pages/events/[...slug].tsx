@@ -64,6 +64,8 @@ interface EventProps {
   waypoint_types: string;
   waypoint_icons_set: string;
   s3PublicPath: string;
+  s3RallyKmlFolder: string;
+  s3RallyRcKmlFolder: string;
   s3WaypointIconsFolder: string;
   waypointIconsSet: string;
   alertIcons: AlertIcon[];
@@ -377,6 +379,10 @@ const Rally: NextPage<EventProps> = (props) => {
     google.maps.KmlLayer | undefined
   >(undefined);
 
+  const [rctrackKmlLayer, setRcTrackKmlLayer] = useState<
+    google.maps.KmlLayer | undefined
+  >(undefined);
+
   // useLayoutEffect(() => {
   //   function updateSize() {
   //     setMapHeight(window.innerHeight - 250);
@@ -513,8 +519,7 @@ const Rally: NextPage<EventProps> = (props) => {
 
         let ctaLayer = new google.maps.KmlLayer({
           url:
-            "https://pptrackerwww.s3.us-west-2.amazonaws.com/maps/tracks/" +
-            r.rally_kml_file,
+            props.s3PublicPath + "/" + props.s3RallyKmlFolder + "/" + r.id + "/" + r.rally_kml_file,
           screenOverlays: true,
           map: undefined,
           zIndex: 2000,
@@ -529,6 +534,28 @@ const Rally: NextPage<EventProps> = (props) => {
           setCenter({
             lat: viewport.getCenter().lat(),
             lng: viewport.getCenter().lng(),
+          });
+        }
+
+        let ctaRCLayer = new google.maps.KmlLayer({
+          url:
+          props.s3PublicPath + "/" + props.s3RallyRcKmlFolder + "/" + r.id + "/" + r.rally_rc_kml_file,
+            // "https://pptrackerwww.s3.us-west-2.amazonaws.com/maps/tracks/" +
+            // r.rally_rc_kml_file,
+          screenOverlays: true,
+          map: undefined,
+          zIndex: 2000,
+          //preserveViewport: true,
+          clickable: false,
+        });
+        if (props.loggedIn || r.show_track_on_viewers) {
+          setRcTrackKmlLayer(ctaRCLayer);
+        }
+        const rcviewport = ctaRCLayer.getDefaultViewport();
+        if (rcviewport != null) {
+          setCenter({
+            lat: rcviewport.getCenter().lat(),
+            lng: rcviewport.getCenter().lng(),
           });
         }
 
@@ -1059,7 +1086,7 @@ const Rally: NextPage<EventProps> = (props) => {
     if (filteredAlerts.length > 0) {
       return true;
     }
-    console.log("filteredAlerts", filteredAlerts.length, filteredAlerts);
+    // console.log("filteredAlerts", filteredAlerts.length, filteredAlerts);
     return false;
   };
 
@@ -1188,6 +1215,7 @@ const Rally: NextPage<EventProps> = (props) => {
                 <TrackingMap
                   isFractionalZoomEnabled={true}
                   kmlTrack={trackKmlLayer}
+                  rckmlTrack={rctrackKmlLayer}
                   centerTo={center}
                   scaleControl={true}
                   zoom={zoom}
@@ -1394,6 +1422,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       waypoint_types: "",
       waypoint_icons_set: "",
       s3PublicPath: "",
+      s3RallyKmlFolder: "",
+      s3RallyRcKmlFolder: "",
       s3WaypointIconsFolder: "",
       waypointIconsSet: "",
       alertIcons: "",
@@ -1427,6 +1457,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const s3PublicPath = options?.s3_public_path;
   const s3WaypointIconsFolder = options?.s3_waypoint_icons_folder;
   const s3AlertIconsFolder = options?.s3_alert_icons_folder;
+  const s3RallyKmlFolder = options?.s3_rally_kml_folder;
+  const s3RallyRcKmlFolder = options?.s3_rc_kml_folder;
+
   const s3DefaultWaypointIconSetId = options?.waypoints_icons_id;
   const s3DefaultWaypointIconSet =
     await prismaClient.waypoint_icon_set.findFirst({
@@ -1506,6 +1539,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       waypoint_types: superjson.stringify(waypoint_types),
       waypoint_icons_set: superjson.stringify(waypoint_icons_set),
       s3PublicPath: s3PublicPath,
+      s3RallyKmlFolder: s3RallyKmlFolder,
+      s3RallyRcKmlFolder: s3RallyRcKmlFolder,
       s3WaypointIconsFolder: s3WaypointIconsFolder,
       waypointIconsSet: waypointIconsSet,
       alertIcons: alertIcons,
