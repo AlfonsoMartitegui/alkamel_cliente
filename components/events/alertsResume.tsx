@@ -29,6 +29,7 @@ import IncidenceComponent from "./alerts/incidenceComponent";
 import MessageComponent from "./alerts/messageComponent";
 import BlueFlagComponent from "./alerts/blueFlagComponent";
 import FiltersComponent from "./alerts/filtersComponent";
+import { get } from "http";
 
 interface AlertIcon {
   id: number;
@@ -50,10 +51,28 @@ interface AlertResumeProps {
 
 export interface AlertFilter {
   showSOS: boolean;
-  showMessages: boolean;
-  showIncidences: boolean;
-  showBlueFlags: boolean;
-  showFlagAlerts: boolean;
+  showMechanical: boolean;
+}
+
+export interface IncidencesFilter {
+  showOverspeedingIncidence: boolean;
+  showReverseIncidense: boolean;
+  showStopZoneIncidence: boolean;
+  showdnMinTimeIncidence: boolean;
+  showdnMaxTimeIncidence: boolean;
+  showdnInvalidExitIncidence: boolean;
+  showdnOverspeedingIncidence: boolean;
+  showWaypointMissedIncidence: boolean;
+  showdzOverspeedingIncidence: boolean;
+  showForbiddenWaypointIncidence: boolean;
+  showStoppedIncidence: boolean;
+  showOthersIncidence: boolean;
+}
+
+export interface FlagsFilter {  
+  showBlueFlag: boolean;
+  showRedFlag: boolean;
+  showYellowFlag: boolean;
 }
 
 const AlertsResume: React.FC<AlertResumeProps> = (props) => {
@@ -99,16 +118,52 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
 
   const setInitialAlertFilters = () => {
     return {
-      showIncidences: true,
       showSOS: true,
-      showMessages: true,
-      showBlueFlags: true,
-      showFlagAlerts: true,
+      showMechanical: true,
     };
   };
   const [alertFilters, setAlertFilters] = React.useState<AlertFilter>(
     setInitialAlertFilters()
   );
+
+  const setInitialIncidencesFilters = () => {
+    return {
+      showOverspeedingIncidence: true,
+      showReverseIncidense: true,
+      showStopZoneIncidence: true,
+      showdnMinTimeIncidence: true,
+      showdnMaxTimeIncidence: true,
+      showdnInvalidExitIncidence: true,
+      showdnOverspeedingIncidence: true,
+      showWaypointMissedIncidence: true,
+      showdzOverspeedingIncidence: true,
+      showForbiddenWaypointIncidence: true,
+      showStoppedIncidence: true,
+      showOthersIncidence: true,
+    };
+  };
+
+  const [incidencesFilters, setIncidencesFilters] = React.useState<IncidencesFilter>(
+    setInitialIncidencesFilters()
+  );
+  const onIncidenceFiltersChange = (filters: IncidencesFilter) => {
+    setIncidencesFilters(filters);
+  };
+
+  const setInitialFlagsFilter = () => {
+    return {
+      showBlueFlag: true,
+      showRedFlag: true,
+      showYellowFlag: true,
+    };
+  };
+  const [flagsFilter, setFlagsFilter] = React.useState<FlagsFilter>(
+    setInitialFlagsFilter()
+  );
+  const onFlagsFilterChange = (filters: FlagsFilter) => {
+    setFlagsFilter(filters);
+  };
+
   // const showAlertYesOrNo = (alert: rallyAlert) => {
   //   return true;
   //   if (alertFilters.showIncidences && isIncidenceAlert(alert)) {
@@ -130,6 +185,70 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = props.alerts.slice(indexOfFirstItem, indexOfLastItem);
+
+  const getSosTypeAsString = (s: apiSosAlertMerge) => {
+    // console.log("Sos Type: ", s.type, " SybTypoe:", s.subtype);
+    if (s.subtype > 0) {
+      switch (s.subtype) {
+        case 1:
+          return "SOS";
+        case 2:
+          return "SOS";
+        case 3:
+          return "MECHANICAL";
+        case 4:
+          return "MECHANICAL";
+        default:
+          return "SOS";
+      }
+    } else {
+      return s.type === 0 ? "SOS" : "MECHANICAL";
+    }
+  };
+
+  useEffect(() => { 
+    const newItems = props.alerts.filter(alert => {
+      // Convertir el tipo en string para poder comparar
+      const type = getSosTypeAsString(alert.alert as apiSosAlertMerge);
+      console.log("Alert Type", type)
+      // Si es del tipo SOS y el filtro de alertFilters.showSOS es falso, no incluir en el resultado
+      if (type === "SOS" && !alertFilters.showSOS) {
+        return false;
+      }
+    })
+    console.log('newItems', newItems);
+  }, [alertFilters.showSOS, props.alerts, indexOfFirstItem, indexOfLastItem]);
+
+  // useEffect(() => {
+  //   const newItems = props.alerts.filter(alert => {
+  //     // Revisar que no haya un alert del tipo SOS
+  //     if ("SOS" in alert.alert && "end_time" in alert.alert) {
+  //       // alert es de tipo apiSosAlertMerge y el tipo de alerta es SOS
+  //       return !alert.alert.end_time;
+  //     }
+  //     return true;
+  //   });
+  
+  //   setCurrentItems(newItems.slice(indexOfFirstItem, indexOfLastItem));
+  // }, [alertFilters.showSOS, props.alerts, indexOfFirstItem, indexOfLastItem]);
+
+  // useEffect(() => {
+  //   const newItems = props.alerts.filter(alert => {
+  //     if ("Blue Flag" in alert.alert && !flagsFilter.showBlueFlag) {
+  //       // Revisar que el alert.alert sea de tipo apiBlueFlag
+  //       return !alert.alert["Blue Flag"];
+  //     }
+  //     if (alert.type === 'red' && !flagsFilter.showRedFlag) {
+  //       return false;
+  //     }
+  //     if (alert.type === 'yellow' && !flagsFilter.showYellowFlag) {
+  //       return false;
+  //     }
+  //     return true;
+  //   });
+  
+  //   setCurrentItems(newItems.slice(indexOfFirstItem, indexOfLastItem));
+  // }, [flagsFilter, props.alerts, indexOfFirstItem, indexOfLastItem]);
 
   return (
     <Fragment>
@@ -270,6 +389,10 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
             filters={alertFilters}
             onHide={onHideFilters}
             onFiltersChange={onFiltersChange}
+            incidencesFilters={incidencesFilters}
+            onIncidenceFiltersChange={onIncidenceFiltersChange}
+            flagsFilter={flagsFilter}
+            onFlagsFilterChange={onFlagsFilterChange} 
           />
         )}
       </Container>

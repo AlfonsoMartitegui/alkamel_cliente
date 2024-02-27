@@ -548,7 +548,10 @@ const Rally: NextPage<EventProps> = (props) => {
           //preserveViewport: true,
           clickable: false,
         });
-        if (props.loggedIn || r.show_track_on_viewers) {
+        // if (props.loggedIn || r.show_track_on_viewers) {
+        //   setRcTrackKmlLayer(ctaRCLayer);
+        // }
+        if (props.loggedIn && (props.userProfile.role === "Race Control Operator" || props.userProfile.role === "Race Control Viewer")) {
           setRcTrackKmlLayer(ctaRCLayer);
         }
         const rcviewport = ctaRCLayer.getDefaultViewport();

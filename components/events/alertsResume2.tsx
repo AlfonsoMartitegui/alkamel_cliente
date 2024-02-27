@@ -231,13 +231,13 @@ const AlertsResume2: React.FC<AlertResumeProps> = (props) => {
             />
           </Pagination>
         </div>
-        {showFilters && (
+        {/* {showFilters && (
           <FiltersComponent
             filters={alertFilters}
             onHide={onHideFilters}
             onFiltersChange={onFiltersChange}
           />
-        )}
+        )} */}
       </Container>
     </Fragment>
   );
