@@ -7,6 +7,7 @@ import superjson from "superjson";
 import { Wrapper, Status } from "@googlemaps/react-wrapper";
 import React, { useEffect, useState, useRef, Fragment } from "react";
 import {
+  messages,
   participant,
   PrismaClient,
   stage,
@@ -80,6 +81,7 @@ interface EventProps {
     roleid: number;
     role: string;
   };
+  messages: string;
 }
 
 const verticalDivider: CSS.Properties = {
@@ -341,6 +343,8 @@ const Rally: NextPage<EventProps> = (props) => {
     }
   };
 
+  const [messages, setMessages] = useState<messages[]>([]);
+
   let stageWaypointRef = useRef();
 
   const [activeEvent, setActiveEvent] = React.useState<eventInfo | undefined>(
@@ -423,6 +427,9 @@ const Rally: NextPage<EventProps> = (props) => {
     console.log(
       ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> EXECUTING useEffect <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
     );
+
+    const eventsMessages: messages[] = superjson.parse(props.messages);
+    setMessages(eventsMessages);
 
     const statuses: stage_statuses[] = superjson.parse(props.stageStatuses);
     setStageStatuses(statuses);
@@ -1404,6 +1411,7 @@ const Rally: NextPage<EventProps> = (props) => {
             priority={"NORMAL"}
             ppTrackerClient={ppTrackerClient}
             rallyId={rally ? rally.id : 0n}
+            messages={messages}
           />
         )}
       </main>
@@ -1432,6 +1440,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       alertIcons: "",
       user: null,
       userProfile: null,
+      messages: "",
     },
   };
 
@@ -1455,8 +1464,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const waypoint_icons_set = await prismaClient.waypoint_icon_set.findMany();
 
   const options = await prismaClient.application_settings.findFirst({
-    where: { id: 1 },
+    orderBy: {
+      id: 'asc',
+    },
   });
+
+  const messageSetId = options?.message_set_id;
+
   const s3PublicPath = options?.s3_public_path;
   const s3WaypointIconsFolder = options?.s3_waypoint_icons_folder;
   const s3AlertIconsFolder = options?.s3_alert_icons_folder;
@@ -1524,6 +1538,14 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     };
   });
 
+  const messages = await prismaClient.messages.findMany({
+    where: { message_set_id: messageSetId || 0 },
+  });
+
+  const messagestest = superjson.stringify(messages);
+  const testset = superjson.parse(messagestest);
+
+  console.log ("SET DE MENSAJES DE ALERTA:" , testset);
   // console.log("ALERT ICONS:", alertIcons);
 
   prismaClient.$disconnect();
@@ -1547,6 +1569,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       s3WaypointIconsFolder: s3WaypointIconsFolder,
       waypointIconsSet: waypointIconsSet,
       alertIcons: alertIcons,
+      messages: superjson.stringify(messages),
     },
   };
 };

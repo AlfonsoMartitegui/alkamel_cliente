@@ -4,10 +4,13 @@ import {
   PPTrackerDataServerIoClient,
 } from "server/ppTrackerdataServerIoClient";
 import { Col, Row, Button, Modal, Form } from "react-bootstrap";
-import { stage } from "@prisma/client";
+import { messages, stage } from "@prisma/client";
 import { apiLogResponse, logLine } from "server/shared/apiSharedTypes";
 import { messageCommand } from "server/shared/socket_io_packets";
 import LogViewer from "components/utils/logViewer";
+import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
+import superjson from "superjson";
 
 interface sendMessageProps {
   rallyId: BigInt;
@@ -18,6 +21,12 @@ interface sendMessageProps {
   priority: string;
   ppTrackerClient: PPTrackerDataServerIoClient;
   onHide: () => void;
+  messages: messages[];
+}
+
+interface autocompleteOption {
+  value: string;
+  label: string;
 }
 
 const SendMessageComponent: React.FC<sendMessageProps> = (props) => {
@@ -33,7 +42,8 @@ const SendMessageComponent: React.FC<sendMessageProps> = (props) => {
 
   const [logLines, setLogLines] = useState<logLine[] | undefined>(undefined);
 
-  const messageText = useRef<HTMLInputElement>(null);
+  // const messageText = useRef<HTMLInputElement>(null);
+  const [message, setMessage] = useState("");
   const messageHasResponse = useRef<HTMLInputElement>(null);
   const messageParticipants = useRef<HTMLSelectElement>(null);
   const messageOfficialCars = useRef<HTMLSelectElement>(null);
@@ -65,10 +75,10 @@ const SendMessageComponent: React.FC<sendMessageProps> = (props) => {
     }
 
     const cmd: messageCommand = {
-      hasResponse: messageHasResponse.current
-        ? messageHasResponse.current.checked
-        : true,
-      message: messageText.current ? messageText.current.value.trim() : "",
+      hasResponse: messageRequiresResponse
+        ? messageRequiresResponse === 1
+        : false,
+      message: message ? message.trim() : "",
       participantsId: selectedParticipants,
       stageId: messageStage.current
         ? Number(messageStage.current.selectedOptions[0].value)
@@ -104,6 +114,43 @@ const SendMessageComponent: React.FC<sendMessageProps> = (props) => {
     setLogLines(undefined);
   };
 
+  const handleNewMessageChange = (newValue: any, actionMeta: any) => {
+    console.group("Value Changed");
+    console.log(newValue);
+    console.log(`action: ${actionMeta.action}`);
+    console.groupEnd();
+
+    if (newValue) {
+      setMessage(newValue.value);
+    }
+
+    // Revisar si requires response y actualizar el checkbox
+    const selectedMessage = props.messages
+      ? props.messages.find((m) => m.message_text === newValue.value)
+      : null;
+    if (selectedMessage) {
+      handleRequiresResponseChange(selectedMessage.response_type, {
+        action: "selected a text",
+      });
+    }
+  };
+
+  const messageAutocompleteOptions = props.messages.map((m) => {
+    return { value: m.message_text, label: m.message_text };
+  });
+
+  const [messageRequiresResponse, setMessageRequiresResponse] = useState(0);
+
+  const handleRequiresResponseChange = (newValue: any, actionMeta: any) => {
+    console.group("Value Changed");
+    console.log(newValue);
+    console.log(`action: ${actionMeta.action}`);
+    console.groupEnd();
+
+    console.log("Setting requires response to: ", newValue);
+    setMessageRequiresResponse(newValue);
+  };
+
   return (
     <Modal show={true} onHide={props.onHide} dialogClassName="sendMessageModal">
       <Modal.Header
@@ -114,7 +161,7 @@ const SendMessageComponent: React.FC<sendMessageProps> = (props) => {
       </Modal.Header>
       <Modal.Body className="bg-dark text-light border border-light">
         <Form>
-          <Row>
+          {/* <Row>
             <Col>
               <Form.Group className="mb-3" controlId="mssText">
                 <Form.Label>Message</Form.Label>
@@ -126,6 +173,40 @@ const SendMessageComponent: React.FC<sendMessageProps> = (props) => {
                   placeholder="message text"
                   defaultValue={""}
                   ref={messageText}
+                />
+              </Form.Group>
+            </Col>
+          </Row> */}
+          <Row>
+            <Col>
+              <Form.Group className="mb-3" controlId="mssText">
+                <Form.Label>Message</Form.Label>
+                <CreatableSelect
+                  defaultValue={{ value: "", label: "message text" }}
+                  options={messageAutocompleteOptions}
+                  isClearable
+                  isSearchable
+                  onChange={handleNewMessageChange}
+                  styles={{
+                    menu: (base) => ({
+                      ...base,
+                      backgroundColor: "white", // Color de fondo del menú
+                      color: "black", // Color del texto del menú
+                    }),
+                  }}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Check
+                  type="checkbox"
+                  label="Requires a YES/NO Response"
+                  value={messageRequiresResponse}
+                  checked={messageRequiresResponse === 1}
+                  onChange={(e) => {
+                    handleRequiresResponseChange(e.target.checked ? 1 : 0, {
+                      action: "checkbox",
+                    });
+                  }}
                 />
               </Form.Group>
             </Col>
@@ -194,14 +275,14 @@ const SendMessageComponent: React.FC<sendMessageProps> = (props) => {
                     ))}
                 </Form.Select>
               </Form.Group>
-              <Form.Group className="mb-3">
+              {/* <Form.Group className="mb-3">
                 <Form.Check
                   type="checkbox"
                   label="Requires a YES/NO Response"
                   defaultChecked={true}
                   ref={messageHasResponse}
                 />
-              </Form.Group>
+              </Form.Group> */}
             </Col>
           </Row>
         </Form>
