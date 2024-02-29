@@ -130,15 +130,33 @@ const AlertsResume2: React.FC<AlertResumeProps> = (props) => {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const filteredAlerts = props.alerts.filter(alert => {
-    if ('ack_time' in alert.alert && 'end_time' in alert.alert) {
+  const filteredAlerts = props.alerts.filter((alert) => {
+    if ("ack_time" in alert.alert && "end_time" in alert.alert) {
       // alert es de tipo apiSosAlertMerge
       return !alert.alert.ack_time && !alert.alert.end_time;
     }
     return false; // Si alert no es de tipo apiSosAlertMerge, incluir en los resultados
   });
   // console.log('filteredAlerts', filteredAlerts.length, filteredAlerts);
-  const currentItems = filteredAlerts.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredAlerts
+    .sort((a, b) => {
+      if (a.time === b.time) {
+        if (a.alertType < b.alertType) return 1;
+        else if (a.alertType === 3 && b.alertType === 3) {
+          const iA = a.alert as apiIncidence;
+          const iB = b.alert as apiIncidence;
+          return iA.pptrackerId < iB.pptrackerId ? 1 : -1;
+        } else if (a.alertType === 4 && b.alertType === 4) {
+          const msgA = a.alert as apiMessage;
+          const msgB = b.alert as apiMessage;
+          return msgA.participant < msgB.participant ? 1 : -1;
+        } else return -1;
+      } else {
+        if (a.time < b.time) return 1;
+        else return -1;
+      }
+    })
+    .slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <Fragment>
@@ -176,40 +194,22 @@ const AlertsResume2: React.FC<AlertResumeProps> = (props) => {
             </tr>
           </thead>
           <tbody>
-            {currentItems
-              .sort((a, b) => {
-                if (a.time === b.time) {
-                  if (a.alertType < b.alertType) return 1;
-                  else if (a.alertType === 3 && b.alertType === 3) {
-                    const iA = a.alert as apiIncidence;
-                    const iB = b.alert as apiIncidence;
-                    return iA.pptrackerId < iB.pptrackerId ? 1 : -1;
-                  } else if (a.alertType === 4 && b.alertType === 4) {
-                    const msgA = a.alert as apiMessage;
-                    const msgB = b.alert as apiMessage;
-                    return msgA.participant < msgB.participant ? 1 : -1;
-                  } else return -1;
-                } else {
-                  if (a.time < b.time) return 1;
-                  else return -1;
-                }
-              })
-              .map((p, index) => (
-                <Fragment key={index}>
-                  {p.alertType === 1 && (
-                    <SosAlertComponent2
-                      alert={p.alert as apiSosAlertMerge}
-                      participants={props.participants}
-                      onDetails={onDetails}
-                      ppTrackerClient={props.ppTrackerClient}
-                      stages={props.stages}
-                      event={props.event}
-                      alertIcons={props.alertIcons}
-                      onParticipantClick={props.onParticipantClick}
-                    />
-                  )}
-                </Fragment>
-              ))}
+            {currentItems.map((p, index) => (
+              <Fragment key={index}>
+                {p.alertType === 1 && (
+                  <SosAlertComponent2
+                    alert={p.alert as apiSosAlertMerge}
+                    participants={props.participants}
+                    onDetails={onDetails}
+                    ppTrackerClient={props.ppTrackerClient}
+                    stages={props.stages}
+                    event={props.event}
+                    alertIcons={props.alertIcons}
+                    onParticipantClick={props.onParticipantClick}
+                  />
+                )}
+              </Fragment>
+            ))}
           </tbody>
         </Table>
         <div>

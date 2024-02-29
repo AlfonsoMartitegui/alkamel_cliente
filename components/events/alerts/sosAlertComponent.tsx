@@ -12,6 +12,8 @@ import { millisToCurrentDate } from "server/shared/utils";
 import Image from "next/image";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 import styles from "./sosAlertComponent.module.css";
+import { SoSAndMechanicalFilter } from "../alertsResume";
+import { get } from "http";
 
 interface AlertIcon {
   id: number;
@@ -28,6 +30,7 @@ interface sosAlertComponentProps {
   ppTrackerClient: PPTrackerDataServerIoClient;
   alertIcons: AlertIcon[];
   onParticipantClick: (participantNumber: string) => void;
+  sosAndMechanicalFilter: SoSAndMechanicalFilter;
 }
 
 const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
@@ -106,7 +109,7 @@ const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
           return "SOS";
       }
     } else {
-      iconText = s.type == 0 ? "SOS" : "Mechanical";
+      iconText = s.type === 0 ? "SOS" : "Mechanical";
       const icon = props.alertIcons.find((icon) => icon.name === iconText);
       const iconUrl = icon
         ? icon.icon
@@ -128,6 +131,45 @@ const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
   }, [props.alert]);
 
   // 1: Fire, 2:Medical, 3: Blocked, 4:NotBlocked
+
+  const getSosTypeAsStringForFilters = (s: apiSosAlertMerge) => {
+    // console.log("Sos Type: ", s.type, " SybTypoe:", s.subtype);
+    if (s.subtype > 0) {
+      switch (s.subtype) {
+        case 1:
+          return "S.O.S. / FIRE";
+        case 2:
+          return "S.O.S. / MEDICAL";
+        case 3:
+          return "MECHANICAL / ROAD BLOCKED";
+        case 4:
+          return "MECHANICAL / ROAD NOT BLOCKED";
+        default:
+          return "SOS";
+      }
+    } else {
+      return s.type === 0 ? "S.O.S" : "MECHANICAL";
+    }
+  };
+
+  // if (!props.sosAndMechanicalFilter.showSOS && getSosTypeAsStringForFilters(props.alert) === "S.O.S") {
+  //   return null;
+  // }
+  // if (!props.sosAndMechanicalFilter.showSOS && getSosTypeAsStringForFilters(props.alert) === "S.O.S. / FIRE") {
+  //   return null;
+  // }
+  // if (!props.sosAndMechanicalFilter.showSOS && getSosTypeAsStringForFilters(props.alert) === "S.O.S. / MEDICAL") {
+  //   return null;
+  // }
+  // if (!props.sosAndMechanicalFilter.showMechanical && getSosTypeAsStringForFilters(props.alert) === "MECHANICAL") {
+  //   return null;
+  // }
+  // if (!props.sosAndMechanicalFilter.showMechanical && getSosTypeAsStringForFilters(props.alert) === "MECHANICAL / ROAD BLOCKED") {
+  //   return null;
+  // }
+  // if (!props.sosAndMechanicalFilter.showMechanical && getSosTypeAsStringForFilters(props.alert) === "MECHANICAL / ROAD NOT BLOCKED") {
+  //   return null;
+  // }
 
   return (
     <tr>

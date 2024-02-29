@@ -70,7 +70,7 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
         const iconUrl2 = icon2
           ? icon2.icon
           : `/maps/${iconsVersion}/alertIcons/reverse.png`;
-        return <Image src={iconUrl2} alt="Stop Zone" height={35} width={35} />;
+        return <Image src={iconUrl2} alt="Reverse" height={35} width={35} />;
       case 3:
         iconText = "Stop Zone";
         const icon3 = props.alertIcons.find((icon) => icon.name === iconText);

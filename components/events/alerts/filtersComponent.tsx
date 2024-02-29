@@ -11,7 +11,12 @@ import {
   Row,
   Col,
 } from "react-bootstrap";
-import { AlertFilter, IncidencesFilter, FlagsFilter } from "../alertsResume";
+import {
+  AlertFilter,
+  IncidencesFilter,
+  FlagsFilter,
+  SoSAndMechanicalFilter,
+} from "../alertsResume";
 import { set } from "date-fns";
 //import { access } from "fs";
 
@@ -19,18 +24,22 @@ interface FiltersProps {
   onFiltersChange: (filters: AlertFilter) => void;
   onHide: () => void;
   filters: AlertFilter;
+  sosAndMechanicalFilter: SoSAndMechanicalFilter;
+  onSosAndMechanicalFilterChange: (filters: SoSAndMechanicalFilter) => void;
   incidencesFilters: IncidencesFilter;
   onIncidenceFiltersChange: (filters: IncidencesFilter) => void;
   flagsFilter: FlagsFilter;
   onFlagsFilterChange: (filters: FlagsFilter) => void;
+  showMessages: boolean;
+  onMessagesFilterChange: (showMessages: boolean) => void;
 }
 
 const FiltersComponent: React.FC<FiltersProps> = (props) => {
   const [showIncidences, setShowIncidences] = React.useState(
-    Object.values(props.incidencesFilters).every(value => value)
+    Object.values(props.incidencesFilters).every((value) => value)
   );
   const [showFlags, setShowFlags] = React.useState(
-    Object.values(props.flagsFilter).every(value => value)
+    Object.values(props.flagsFilter).every((value) => value)
   );
 
   const handleIncidencesCheckboxChange = (
@@ -62,11 +71,12 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
   };
 
   React.useEffect(() => {
-    const isAllTrue = Object.values(props.incidencesFilters).every(value => value);
+    const isAllTrue = Object.values(props.incidencesFilters).every(
+      (value) => value
+    );
     if (isAllTrue) {
       setShowIncidences(true);
-    }
-    else {
+    } else {
       setShowIncidences(false);
     }
   }, [props.incidencesFilters]);
@@ -81,6 +91,7 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
       showBlueFlag: e.target.checked,
       showRedFlag: e.target.checked,
       showYellowFlag: e.target.checked,
+      showNoFlag: e.target.checked,
     };
 
     // Actualizar el estado de showIncidences
@@ -91,11 +102,10 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
   };
 
   React.useEffect(() => {
-    const isAllTrue = Object.values(props.flagsFilter).every(value => value);
+    const isAllTrue = Object.values(props.flagsFilter).every((value) => value);
     if (isAllTrue) {
       setShowFlags(true);
-    }
-    else {
+    } else {
       setShowFlags(false);
     }
   }, [props.flagsFilter]);
@@ -125,11 +135,11 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                       <Form.Check
                         type="checkbox"
                         label="SOS"
-                        checked={props.filters.showSOS}
+                        checked={props.sosAndMechanicalFilter.showSOS}
                         onChange={(e) => {
                           // Actualiza el estado de tus filtros aquí
-                          props.onFiltersChange({
-                            ...props.filters,
+                          props.onSosAndMechanicalFilterChange({
+                            ...props.sosAndMechanicalFilter,
                             showSOS: e.target.checked,
                           });
                         }}
@@ -139,11 +149,11 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                       <Form.Check
                         type="checkbox"
                         label="Mechanical"
-                        checked={props.filters.showMechanical}
+                        checked={props.sosAndMechanicalFilter.showMechanical}
                         onChange={(e) => {
                           // Actualiza el estado de tus filtros aquí
-                          props.onFiltersChange({
-                            ...props.filters,
+                          props.onSosAndMechanicalFilterChange({
+                            ...props.sosAndMechanicalFilter,
                             showMechanical: e.target.checked,
                           });
                         }}
@@ -393,6 +403,20 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                       />
                     </Col>
                   </Row>
+                  <Row>
+                    <Col md={2}></Col>
+                    <Col md={3}>
+                      <Form.Check
+                        type="checkbox"
+                        label="Messages"
+                        checked={props.showMessages}
+                        onChange={(e) => {
+                          // Actualiza el estado de tus filtros aquí
+                          props.onMessagesFilterChange(e.target.checked);
+                        }}
+                      />
+                    </Col>
+                  </Row>
                 </td>
               </tr>
               <tr>
@@ -406,7 +430,7 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                         onChange={handleFlagsCheckboxChange}
                       />
                     </Col>
-                    <Col md={3}>
+                    <Col md={2}>
                       <Form.Check
                         type="checkbox"
                         label="Blue flag"
@@ -420,7 +444,7 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                         }}
                       />
                     </Col>
-                    <Col md={3}>
+                    <Col md={2}>
                       <Form.Check
                         type="checkbox"
                         label="Red flag"
@@ -434,7 +458,7 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                         }}
                       />
                     </Col>
-                    <Col md={3}>
+                    <Col md={2}>
                       <Form.Check
                         type="checkbox"
                         label="Yellow flag"
@@ -444,6 +468,20 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                           props.onFlagsFilterChange({
                             ...props.flagsFilter,
                             showYellowFlag: e.target.checked,
+                          });
+                        }}
+                      />
+                    </Col>
+                    <Col md={2}>
+                      <Form.Check
+                        type="checkbox"
+                        label="No flag"
+                        checked={props.flagsFilter.showNoFlag}
+                        onChange={(e) => {
+                          // Actualiza el estado de tus filtros aquí
+                          props.onFlagsFilterChange({
+                            ...props.flagsFilter,
+                            showNoFlag: e.target.checked,
                           });
                         }}
                       />

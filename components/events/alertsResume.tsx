@@ -30,6 +30,7 @@ import MessageComponent from "./alerts/messageComponent";
 import BlueFlagComponent from "./alerts/blueFlagComponent";
 import FiltersComponent from "./alerts/filtersComponent";
 import { get } from "http";
+import { set } from "date-fns";
 
 interface AlertIcon {
   id: number;
@@ -54,6 +55,11 @@ export interface AlertFilter {
   showMechanical: boolean;
 }
 
+export interface SoSAndMechanicalFilter {
+  showSOS: boolean;
+  showMechanical: boolean;
+}
+
 export interface IncidencesFilter {
   showOverspeedingIncidence: boolean;
   showReverseIncidense: boolean;
@@ -69,10 +75,11 @@ export interface IncidencesFilter {
   showOthersIncidence: boolean;
 }
 
-export interface FlagsFilter {  
+export interface FlagsFilter {
   showBlueFlag: boolean;
   showRedFlag: boolean;
   showYellowFlag: boolean;
+  showNoFlag: boolean;
 }
 
 const AlertsResume: React.FC<AlertResumeProps> = (props) => {
@@ -126,6 +133,20 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
     setInitialAlertFilters()
   );
 
+  const setInitialSosAndMechanicalFilter = () => {
+    return {
+      showSOS: true,
+      showMechanical: true,
+    };
+  };
+
+  const [sosAndMechanicalFilter, setSosAndMechanicalFilter] =
+    React.useState<SoSAndMechanicalFilter>(setInitialSosAndMechanicalFilter());
+
+  const onSosAndMechanicalFilterChange = (filters: SoSAndMechanicalFilter) => {
+    setSosAndMechanicalFilter(filters);
+  };
+
   const setInitialIncidencesFilters = () => {
     return {
       showOverspeedingIncidence: true,
@@ -143,9 +164,9 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
     };
   };
 
-  const [incidencesFilters, setIncidencesFilters] = React.useState<IncidencesFilter>(
-    setInitialIncidencesFilters()
-  );
+  const [incidencesFilters, setIncidencesFilters] =
+    React.useState<IncidencesFilter>(setInitialIncidencesFilters());
+
   const onIncidenceFiltersChange = (filters: IncidencesFilter) => {
     setIncidencesFilters(filters);
   };
@@ -155,6 +176,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
       showBlueFlag: true,
       showRedFlag: true,
       showYellowFlag: true,
+      showNoFlag: true,
     };
   };
   const [flagsFilter, setFlagsFilter] = React.useState<FlagsFilter>(
@@ -163,6 +185,11 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
   const onFlagsFilterChange = (filters: FlagsFilter) => {
     setFlagsFilter(filters);
   };
+
+  const [showMessages, setShowMessages] = React.useState<boolean>(true);
+  const onMessagesFilterChange = (showMessages: boolean) => {
+    setShowMessages(showMessages);
+  }
 
   // const showAlertYesOrNo = (alert: rallyAlert) => {
   //   return true;
@@ -184,71 +211,100 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = props.alerts.slice(indexOfFirstItem, indexOfLastItem);
 
-  const getSosTypeAsString = (s: apiSosAlertMerge) => {
-    // console.log("Sos Type: ", s.type, " SybTypoe:", s.subtype);
-    if (s.subtype > 0) {
-      switch (s.subtype) {
-        case 1:
-          return "SOS";
-        case 2:
-          return "SOS";
-        case 3:
-          return "MECHANICAL";
-        case 4:
-          return "MECHANICAL";
-        default:
-          return "SOS";
+  const orderItems = (alerts: rallyAlert[]) => {
+    const orderedItems = alerts.sort((a, b) => {
+      if (a.time === b.time) {
+        if (a.alertType < b.alertType) return 1;
+        else if (a.alertType === 3 && b.alertType === 3) {
+          const iA = a.alert as apiIncidence;
+          const iB = b.alert as apiIncidence;
+          return iA.pptrackerId < iB.pptrackerId ? 1 : -1;
+        } else if (a.alertType === 4 && b.alertType === 4) {
+          const msgA = a.alert as apiMessage;
+          const msgB = b.alert as apiMessage;
+          return msgA.participant < msgB.participant ? 1 : -1;
+        } else return -1;
+      } else {
+        if (a.time < b.time) return 1;
+        else return -1;
       }
-    } else {
-      return s.type === 0 ? "SOS" : "MECHANICAL";
-    }
+    });
+    return orderedItems;
   };
 
-  useEffect(() => { 
-    const newItems = props.alerts.filter(alert => {
-      // Convertir el tipo en string para poder comparar
-      const type = getSosTypeAsString(alert.alert as apiSosAlertMerge);
-      console.log("Alert Type", type)
-      // Si es del tipo SOS y el filtro de alertFilters.showSOS es falso, no incluir en el resultado
-      if (type === "SOS" && !alertFilters.showSOS) {
-        return false;
-      }
-    })
-    console.log('newItems', newItems);
-  }, [alertFilters.showSOS, props.alerts, indexOfFirstItem, indexOfLastItem]);
+  const [items, setItems] = useState<rallyAlert[]>(orderItems(props.alerts));
 
-  // useEffect(() => {
-  //   const newItems = props.alerts.filter(alert => {
-  //     // Revisar que no haya un alert del tipo SOS
-  //     if ("SOS" in alert.alert && "end_time" in alert.alert) {
-  //       // alert es de tipo apiSosAlertMerge y el tipo de alerta es SOS
-  //       return !alert.alert.end_time;
-  //     }
-  //     return true;
-  //   });
-  
-  //   setCurrentItems(newItems.slice(indexOfFirstItem, indexOfLastItem));
-  // }, [alertFilters.showSOS, props.alerts, indexOfFirstItem, indexOfLastItem]);
+  const [totalItems, setTotalItems] = useState<number>(items.length);
 
-  // useEffect(() => {
-  //   const newItems = props.alerts.filter(alert => {
-  //     if ("Blue Flag" in alert.alert && !flagsFilter.showBlueFlag) {
-  //       // Revisar que el alert.alert sea de tipo apiBlueFlag
-  //       return !alert.alert["Blue Flag"];
-  //     }
-  //     if (alert.type === 'red' && !flagsFilter.showRedFlag) {
-  //       return false;
-  //     }
-  //     if (alert.type === 'yellow' && !flagsFilter.showYellowFlag) {
-  //       return false;
-  //     }
-  //     return true;
-  //   });
-  
-  //   setCurrentItems(newItems.slice(indexOfFirstItem, indexOfLastItem));
-  // }, [flagsFilter, props.alerts, indexOfFirstItem, indexOfLastItem]);
+  useEffect(() => {
+    let filteredItems = props.alerts;
+
+    if (!flagsFilter.showBlueFlag) {
+      filteredItems = props.alerts.filter((item) => item.alertType !== 5);
+    }
+
+    if (!flagsFilter.showRedFlag) {
+      filteredItems = filteredItems.filter((item) => {
+        if (item.alertType === 2) {
+          const flag = item.alert as flagAlert;
+          return flag.flag_type !== 1;
+        } else return true;
+      });
+    }
+
+    if(!flagsFilter.showYellowFlag) {
+      filteredItems = filteredItems.filter((item) => {
+        if (item.alertType === 2) {
+          const flag = item.alert as flagAlert;
+          return flag.flag_type !== 2;
+        } else return true;
+      });
+    }
+
+    if(!flagsFilter.showNoFlag) {
+      filteredItems = filteredItems.filter((item) => {
+        if (item.alertType === 2) {
+          const flag = item.alert as flagAlert;
+          return flag.flag_type !== 0;
+        } else return true;
+      });
+    }
+
+    if (!sosAndMechanicalFilter.showSOS) {
+      filteredItems = filteredItems.filter((item) => {
+        if (item.alertType === 1) {
+          const sos = item.alert as apiSosAlertMerge;
+          if (sos.type === 0 && sos.subtype === 0) return false;
+          return sos.subtype !== 1 && sos.subtype !== 2;
+        } else return true;
+      });
+    }
+
+    if (!sosAndMechanicalFilter.showMechanical) {
+      filteredItems = filteredItems.filter((item) => {
+        if (item.alertType === 1) {
+          const sos = item.alert as apiSosAlertMerge;
+          if (sos.type === 1 && sos.subtype === 0) return false;
+          return sos.subtype !== 3 && sos.subtype !== 4;
+        } else return true;
+      });
+    }
+
+    if(!showMessages) {
+      filteredItems = filteredItems.filter((item) => item.alertType !== 4);
+    }
+
+    let orderedItems = orderItems(filteredItems);
+
+    setItems(orderedItems);
+    setTotalItems(orderedItems.length);
+    setCurrentPage(1);
+
+    console.log("Number of items:", orderedItems.length);
+  }, [flagsFilter, sosAndMechanicalFilter, showMessages, props.alerts]);
+
+  const currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <Fragment>
@@ -286,83 +342,67 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
             </tr>
           </thead>
           <tbody>
-            {currentItems
-              .sort((a, b) => {
-                if (a.time === b.time) {
-                  if (a.alertType < b.alertType) return 1;
-                  else if (a.alertType === 3 && b.alertType === 3) {
-                    const iA = a.alert as apiIncidence;
-                    const iB = b.alert as apiIncidence;
-                    return iA.pptrackerId < iB.pptrackerId ? 1 : -1;
-                  } else if (a.alertType === 4 && b.alertType === 4) {
-                    const msgA = a.alert as apiMessage;
-                    const msgB = b.alert as apiMessage;
-                    return msgA.participant < msgB.participant ? 1 : -1;
-                  } else return -1;
-                } else {
-                  if (a.time < b.time) return 1;
-                  else return -1;
-                }
-              })
-              .map((p, index) => (
-                <Fragment key={index}>
-                  {p.alertType === 1 && (
-                    <SosAlertComponent
-                      alert={p.alert as apiSosAlertMerge}
-                      participants={props.participants}
-                      onDetails={onDetails}
-                      ppTrackerClient={props.ppTrackerClient}
-                      stages={props.stages}
-                      event={props.event}
-                      alertIcons={props.alertIcons}
-                      onParticipantClick={props.onParticipantClick}
-                    />
-                  )}
-                  {p.alertType === 2 && (
-                    <FlagAlertComponent
-                      alert={p.alert as flagAlert}
-                      onDetails={onDetails}
-                      participants={props.participants}
-                      stages={props.stages}
-                      event={props.event}
-                      alertIcons={props.alertIcons}
-                      onParticipantClick={props.onParticipantClick}
-                    />
-                  )}
-                  {p.alertType === 3 && (
-                    <IncidenceComponent
-                      incidence={p.alert as apiIncidence}
-                      participants={props.participants}
-                      onDetails={onDetails}
-                      stages={props.stages}
-                      event={props.event}
-                      onCenterMapOnParticipant={onCenterMapOnParticipant}
-                      alertIcons={props.alertIcons}
-                      onParticipantClick={props.onParticipantClick}
-                    />
-                  )}
-                  {p.alertType === 5 && (
-                    <BlueFlagComponent
-                      blueFlag={p.alert as apiBlueFlag}
-                      participants={props.participants}
-                      onDetails={onDetails}
-                      stages={props.stages}
-                      event={props.event}
-                      alertIcons={props.alertIcons}
-                    />
-                  )}
-                  {p.alertType === 4 && (
-                    <MessageComponent
-                      message={p.alert as apiMessage}
-                      participants={props.participants}
-                      stages={props.stages}
-                      event={props.event}
-                      alertIcons={props.alertIcons}
-                      onParticipantClick={props.onParticipantClick}
-                    />
-                  )}
-                </Fragment>
-              ))}
+            {currentItems.map((p, index) => (
+              <Fragment key={index}>
+                {p.alertType === 1 && (
+                  <SosAlertComponent
+                    alert={p.alert as apiSosAlertMerge}
+                    participants={props.participants}
+                    onDetails={onDetails}
+                    ppTrackerClient={props.ppTrackerClient}
+                    stages={props.stages}
+                    event={props.event}
+                    alertIcons={props.alertIcons}
+                    onParticipantClick={props.onParticipantClick}
+                    sosAndMechanicalFilter={sosAndMechanicalFilter}
+                  />
+                )}
+                {p.alertType === 2 && (
+                  <FlagAlertComponent
+                    alert={p.alert as flagAlert}
+                    onDetails={onDetails}
+                    participants={props.participants}
+                    stages={props.stages}
+                    event={props.event}
+                    alertIcons={props.alertIcons}
+                    onParticipantClick={props.onParticipantClick}
+                    flagsFilter={flagsFilter}
+                  />
+                )}
+                {p.alertType === 3 && (
+                  <IncidenceComponent
+                    incidence={p.alert as apiIncidence}
+                    participants={props.participants}
+                    onDetails={onDetails}
+                    stages={props.stages}
+                    event={props.event}
+                    onCenterMapOnParticipant={onCenterMapOnParticipant}
+                    alertIcons={props.alertIcons}
+                    onParticipantClick={props.onParticipantClick}
+                  />
+                )}
+                {p.alertType === 5 && (
+                  <BlueFlagComponent
+                    blueFlag={p.alert as apiBlueFlag}
+                    participants={props.participants}
+                    onDetails={onDetails}
+                    stages={props.stages}
+                    event={props.event}
+                    alertIcons={props.alertIcons}
+                  />
+                )}
+                {p.alertType === 4 && (
+                  <MessageComponent
+                    message={p.alert as apiMessage}
+                    participants={props.participants}
+                    stages={props.stages}
+                    event={props.event}
+                    alertIcons={props.alertIcons}
+                    onParticipantClick={props.onParticipantClick}
+                  />
+                )}
+              </Fragment>
+            ))}
           </tbody>
         </Table>
         <div>
@@ -376,7 +416,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
             <Pagination.Next
               onClick={() =>
                 setCurrentPage(
-                  currentPage < Math.ceil(props.alerts.length / itemsPerPage)
+                  currentPage < Math.ceil(totalItems / itemsPerPage)
                     ? currentPage + 1
                     : currentPage
                 )
@@ -389,10 +429,14 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
             filters={alertFilters}
             onHide={onHideFilters}
             onFiltersChange={onFiltersChange}
+            sosAndMechanicalFilter={sosAndMechanicalFilter}
+            onSosAndMechanicalFilterChange={onSosAndMechanicalFilterChange}
             incidencesFilters={incidencesFilters}
             onIncidenceFiltersChange={onIncidenceFiltersChange}
             flagsFilter={flagsFilter}
-            onFlagsFilterChange={onFlagsFilterChange} 
+            onFlagsFilterChange={onFlagsFilterChange}
+            showMessages={showMessages}
+            onMessagesFilterChange={onMessagesFilterChange}
           />
         )}
       </Container>

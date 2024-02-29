@@ -14,6 +14,13 @@ interface AlertIcon {
   icon: string;
 }
 
+export interface FlagsFilter {
+  showBlueFlag: boolean;
+  showRedFlag: boolean;
+  showYellowFlag: boolean;
+  showNoFlag: boolean;
+}
+
 interface flagAlertProps {
   event: eventInfo | undefined;
   alert: flagAlert;
@@ -22,6 +29,7 @@ interface flagAlertProps {
   onDetails: (e: React.MouseEvent<HTMLButtonElement>) => void;
   alertIcons: AlertIcon[];
   onParticipantClick: (participantNumber: string) => void;
+  flagsFilter: FlagsFilter;
 }
 
 const FlagAlertComponent: React.FC<flagAlertProps> = (props) => {
@@ -62,14 +70,7 @@ const FlagAlertComponent: React.FC<flagAlertProps> = (props) => {
         const iconUrl2 = icon2
           ? icon2.icon
           : `/maps/${iconsVersion}/alertIcons/redFlag.png`;
-        return (
-          <Image
-            src={iconUrl2}
-            alt="Red Flag"
-            height={35}
-            width={35}
-          />
-        );
+        return <Image src={iconUrl2} alt="Red Flag" height={35} width={35} />;
       case 2:
         iconText = "Yellow Flag";
         const icon3 = props.alertIcons.find((icon) => icon.name === iconText);
@@ -77,15 +78,20 @@ const FlagAlertComponent: React.FC<flagAlertProps> = (props) => {
           ? icon3.icon
           : `/maps/${iconsVersion}/alertIcons/yellowFlag.png`;
         return (
-          <Image
-            src={iconUrl3}
-            alt="Yellow Flag"
-            height={35}
-            width={35}
-          />
+          <Image src={iconUrl3} alt="Yellow Flag" height={35} width={35} />
         );
     }
   };
+
+  // if (!props.flagsFilter.showNoFlag && props.alert.flag_type === 0) {
+  //   return null;
+  // }
+  // if (!props.flagsFilter.showRedFlag && props.alert.flag_type === 1) {
+  //   return null;
+  // }
+  // if (!props.flagsFilter.showYellowFlag && props.alert.flag_type === 2) {
+  //   return null;
+  // }
 
   return (
     <tr>
