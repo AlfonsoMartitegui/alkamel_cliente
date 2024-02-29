@@ -53,6 +53,10 @@ interface FiltersProps {
   stagesFilter: StagesFilter[];
   setStagesFilter: (stages: StagesFilter[]) => void;
   stages: stage[];
+  startTimeFilter: string;
+  setStartTimeFilter: (startTime: string) => void;
+  endTimeFilter: string;
+  setEndTimeFilter: (endTime: string) => void;
 }
 
 const FiltersComponent: React.FC<FiltersProps> = (props) => {
@@ -131,8 +135,8 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
     }
   }, [props.flagsFilter]);
 
-  const [startDate, setStartDate] = React.useState("");
-  const [endDate, setEndDate] = React.useState("");
+  // const [startDate, setStartDate] = React.useState("");
+  // const [endDate, setEndDate] = React.useState("");
 
   const listOfParticipants = props.participants
     .sort((a, b) => {
@@ -674,14 +678,14 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                       <div className="w-100">
                         <Form.Control
                           type="datetime-local"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
+                          value={props.startTimeFilter}
+                          onChange={(e) => props.setStartTimeFilter(e.target.value)}
                         />
                       </div>
                     </Col>
                     <Col md={1}>
                       <Button
-                        onClick={() => setStartDate("")}
+                        onClick={() => props.setStartTimeFilter("")}
                         size="sm"
                         variant="primary"
                         type="button"
@@ -696,14 +700,15 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                       <div className="w-100">
                         <Form.Control
                           type="datetime-local"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
+                          value={props.endTimeFilter}
+                          onChange={(e) => 
+                            props.setEndTimeFilter(e.target.value)}
                         />
                       </div>
                     </Col>
                     <Col md={1}>
                       <Button
-                        onClick={() => setEndDate("")}
+                        onClick={() => props.setEndTimeFilter("")}
                         size="sm"
                         variant="primary"
                         type="button"
@@ -719,7 +724,38 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
         </Container>
       </Modal.Body>
       <Modal.Footer className="bg-dark text-light border border-light">
-        <Button variant="secondary" onClick={() => {}}>
+        <Button variant="secondary" onClick={() => {
+          props.onSosAndMechanicalFilterChange({
+            showSOS: true,
+            showMechanical: true,
+          });
+          props.onIncidenceFiltersChange({
+            showOverspeedingIncidence: true,
+            showReverseIncidense: true,
+            showStopZoneIncidence: true,
+            showdnMinTimeIncidence: true,
+            showdnMaxTimeIncidence: true,
+            showdnInvalidExitIncidence: true,
+            showdnOverspeedingIncidence: true,
+            showWaypointMissedIncidence: true,
+            showdzOverspeedingIncidence: true,
+            showForbiddenWaypointIncidence: true,
+            showStoppedIncidence: true,
+            showOthersIncidence: true,
+          });
+          props.onFlagsFilterChange({
+            showBlueFlag: true,
+            showRedFlag: true,
+            showYellowFlag: true,
+            showNoFlag: true,
+          });
+          props.onMessagesFilterChange(true);
+          props.setStagesFilter([]);
+          props.setParticipantFilter("");
+          props.setOfficialCarFilter("");
+          props.setStartTimeFilter("");
+          props.setEndTimeFilter("");
+        }}>
           Clear Filters
         </Button>
         <Button variant="secondary" onClick={props.onHide}>

@@ -202,6 +202,9 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
 
   const [stagesFilter, setStagesFilter] = React.useState<StagesFilter[]>([]);
 
+  const [startTimeFilter, setStartTimeFilter] = React.useState<string>("");
+  const [endTimeFilter, setEndTimeFilter] = React.useState<string>("");
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
@@ -526,8 +529,28 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
       });
     }
 
-    console.log("Stages Filter: ", stagesFilter);
-    console.log("Stages filter length: ", stagesFilter.length);
+    if (startTimeFilter !== "") {
+      filteredItems = filteredItems.filter((item) => {
+        const date = new Date(item.time);
+        const startTime = new Date(startTimeFilter).getTime();
+        return date.getTime() >= startTime;
+      });
+    }
+
+    if(endTimeFilter !== "") {
+      filteredItems = filteredItems.filter((item) => {
+        const date = new Date(item.time);
+        const endTime = new Date(endTimeFilter).getTime();
+        return date.getTime() <= endTime;
+      });
+    }
+
+    // 2023-11-18 14:49:57.400
+
+    // 2023-11-18 12:58:42.200
+
+    // console.log("Stages Filter: ", stagesFilter);
+    // console.log("Stages filter length: ", stagesFilter.length);
 
     let orderedItems = orderItems(filteredItems);
 
@@ -544,6 +567,8 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
     participantFilter,
     officialCarFilter,
     stagesFilter,
+    startTimeFilter,
+    endTimeFilter,
     props.alerts,
   ]);
 
@@ -706,6 +731,10 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
             stages={props.stages}
             setStagesFilter={setStagesFilter}
             stagesFilter={stagesFilter}
+            startTimeFilter={startTimeFilter}
+            setStartTimeFilter={setStartTimeFilter}
+            endTimeFilter={endTimeFilter}
+            setEndTimeFilter={setEndTimeFilter}
           />
         )}
       </Container>
