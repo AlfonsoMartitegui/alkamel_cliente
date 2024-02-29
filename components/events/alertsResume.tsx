@@ -82,6 +82,11 @@ export interface FlagsFilter {
   showNoFlag: boolean;
 }
 
+export interface StagesFilter {
+  value: string;
+  label: string;
+}
+
 const AlertsResume: React.FC<AlertResumeProps> = (props) => {
   useEffect(() => {
     console.log(
@@ -189,22 +194,13 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
   const [showMessages, setShowMessages] = React.useState<boolean>(true);
   const onMessagesFilterChange = (showMessages: boolean) => {
     setShowMessages(showMessages);
-  }
+  };
 
-  // const showAlertYesOrNo = (alert: rallyAlert) => {
-  //   return true;
-  //   if (alertFilters.showIncidences && isIncidenceAlert(alert)) {
-  //     return true;
-  //   } else if (alertFilters.showSOS && isSosAlert(alert)) {
-  //     return true;
-  //   } else if (alertFilters.showFlagAlerts && isFlagAlert(alert)) {
-  //     return true;
-  //   } else if (alertFilters.showBlueFlags && isBlueFlagAlert(alert)) {
-  //     return true;
-  //   } else if (alertFilters.showMessages && isMessageAlert(alert)) {
-  //     return true;
-  //   } else return true;
-  // };
+  const [participantFilter, setParticipantFilter] = React.useState("");
+
+  const [officialCarFilter, setOfficialCarFilter] = React.useState("");
+
+  const [stagesFilter, setStagesFilter] = React.useState<StagesFilter[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -237,6 +233,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
 
   const [totalItems, setTotalItems] = useState<number>(items.length);
 
+  // AQUI EMPIEZA LA APLICACION DE LOS FILTROS
   useEffect(() => {
     let filteredItems = props.alerts;
 
@@ -253,7 +250,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
       });
     }
 
-    if(!flagsFilter.showYellowFlag) {
+    if (!flagsFilter.showYellowFlag) {
       filteredItems = filteredItems.filter((item) => {
         if (item.alertType === 2) {
           const flag = item.alert as flagAlert;
@@ -262,7 +259,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
       });
     }
 
-    if(!flagsFilter.showNoFlag) {
+    if (!flagsFilter.showNoFlag) {
       filteredItems = filteredItems.filter((item) => {
         if (item.alertType === 2) {
           const flag = item.alert as flagAlert;
@@ -291,126 +288,246 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
       });
     }
 
-    if(!showMessages) {
+    if (!showMessages) {
       filteredItems = filteredItems.filter((item) => item.alertType !== 4);
     }
 
-    if(!incidencesFilters.showOverspeedingIncidence){
+    if (!incidencesFilters.showOverspeedingIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type !== 1;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showReverseIncidense){
+    if (!incidencesFilters.showReverseIncidense) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type !== 2;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showStopZoneIncidence){
+    if (!incidencesFilters.showStopZoneIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type !== 3;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showdnMinTimeIncidence){
+    if (!incidencesFilters.showdnMinTimeIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type !== 4;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showdnMaxTimeIncidence){
+    if (!incidencesFilters.showdnMaxTimeIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type !== 5;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showdnInvalidExitIncidence){
+    if (!incidencesFilters.showdnInvalidExitIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type !== 6;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showdnOverspeedingIncidence){
+    if (!incidencesFilters.showdnOverspeedingIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type !== 7;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showWaypointMissedIncidence){
+    if (!incidencesFilters.showWaypointMissedIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type !== 8;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showdzOverspeedingIncidence){
+    if (!incidencesFilters.showdzOverspeedingIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type !== 9;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showForbiddenWaypointIncidence){
+    if (!incidencesFilters.showForbiddenWaypointIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type !== 10;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showStoppedIncidence){
+    if (!incidencesFilters.showStoppedIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type !== 11;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showOthersIncidence){
+    if (!incidencesFilters.showOthersIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type > 11;
         } else return true;
-      }); 
+      });
     }
 
-    if(!incidencesFilters.showOthersIncidence){
+    if (!incidencesFilters.showOthersIncidence) {
       filteredItems = filteredItems.filter((item) => {
-        if(item.alertType === 3){
+        if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
           return incidence.type === 0;
         } else return true;
-      }); 
+      });
     }
+
+    if (participantFilter !== "" && participantFilter !== null) {
+      filteredItems = filteredItems.filter((item) => {
+        if (item.alertType === 1) {
+          const sos = item.alert as apiSosAlertMerge;
+          const getParticipant = participantsById.get(BigInt(sos.participant));
+          const participantNumber = getParticipant ? getParticipant.number : "";
+          return participantNumber === participantFilter;
+        } else if (item.alertType === 2) {
+          // const flag = item.alert as flagAlert;
+          // const participantNumber = participantsById.get(BigInt(flag.));
+          return item.alertType !== 2;
+        } else if (item.alertType === 3) {
+          const incidence = item.alert as apiIncidence;
+          // Obtener el numero a partir del participantId
+          const getParticipant = participantsById.get(
+            BigInt(incidence.participantId)
+          );
+          const participantNumber = getParticipant ? getParticipant.number : "";
+          return participantNumber === participantFilter;
+        } else if (item.alertType === 4) {
+          const message = item.alert as apiMessage;
+          const getParticipant = participantsById.get(
+            BigInt(message.participant)
+          );
+          const participantNumber = getParticipant ? getParticipant.number : "";
+          return participantNumber === participantFilter;
+        } else if (item.alertType === 5) {
+          const blueFlag = item.alert as apiBlueFlag;
+          const getParticipantRequester = participantsById.get(
+            BigInt(blueFlag.participant_requester)
+          );
+          const getParticipantTarget = participantsById.get(
+            BigInt(blueFlag.participant_target)
+          );
+          const participantRequesterNumber = getParticipantRequester
+            ? getParticipantRequester.number
+            : "";
+          const participantTargetNumber = getParticipantTarget
+            ? getParticipantTarget.number
+            : "";
+          return (
+            participantRequesterNumber === participantFilter ||
+            participantTargetNumber === participantFilter
+          );
+        } else return true;
+      });
+    }
+
+    if (officialCarFilter !== "" && officialCarFilter !== null) {
+      filteredItems = filteredItems.filter((item) => {
+        if (item.alertType === 1) {
+          const sos = item.alert as apiSosAlertMerge;
+          const getParticipant = participantsById.get(BigInt(sos.participant));
+          const participantNumber = getParticipant ? getParticipant.number : "";
+          return participantNumber === officialCarFilter;
+        } else if (item.alertType === 2) {
+          // const flag = item.alert as flagAlert;
+          // const participantNumber = participantsById.get(BigInt(flag.));
+          return item.alertType !== 2;
+        } else if (item.alertType === 3) {
+          const incidence = item.alert as apiIncidence;
+          // Obtener el numero a partir del participantId
+          const getParticipant = participantsById.get(
+            BigInt(incidence.participantId)
+          );
+          const participantNumber = getParticipant ? getParticipant.number : "";
+          return participantNumber === officialCarFilter;
+        } else if (item.alertType === 4) {
+          const message = item.alert as apiMessage;
+          const getParticipant = participantsById.get(
+            BigInt(message.participant)
+          );
+          const participantNumber = getParticipant ? getParticipant.number : "";
+          return participantNumber === officialCarFilter;
+        } else if (item.alertType === 5) {
+          const blueFlag = item.alert as apiBlueFlag;
+          const getParticipantRequester = participantsById.get(
+            BigInt(blueFlag.participant_requester)
+          );
+          const getParticipantTarget = participantsById.get(
+            BigInt(blueFlag.participant_target)
+          );
+          const participantRequesterNumber = getParticipantRequester
+            ? getParticipantRequester.number
+            : "";
+          const participantTargetNumber = getParticipantTarget
+            ? getParticipantTarget.number
+            : "";
+          return (
+            participantRequesterNumber === officialCarFilter ||
+            participantTargetNumber === officialCarFilter
+          );
+        } else return true;
+      });
+    }
+
+    if (stagesFilter.length > 0) {
+      filteredItems = filteredItems.filter((item) => {
+        if (item.alertType === 1) {
+          const sos = item.alert as apiSosAlertMerge;
+          return stagesFilter.some((stage) => stage.value === sos.stage_id.toString());
+        } else if (item.alertType === 2) {
+          const flag = item.alert as flagAlert;
+          return stagesFilter.some((stage) => stage.value === flag.stage_id.toString());
+        } else if (item.alertType === 3) {
+          const incidence = item.alert as apiIncidence;
+          return stagesFilter.some((stage) => stage.value === incidence.stageId.toString());
+        } else if (item.alertType === 4) {
+          const message = item.alert as apiMessage;
+          return stagesFilter.some((stage) => stage.value === message.stage_id.toString());
+        } else if (item.alertType === 5) {
+          const blueFlag = item.alert as apiBlueFlag;
+          return stagesFilter.some((stage) => stage.value === blueFlag.stage_id.toString());
+        } else return true;
+      });
+    }
+
+    console.log("Stages Filter: ", stagesFilter);
+    console.log("Stages filter length: ", stagesFilter.length);
 
     let orderedItems = orderItems(filteredItems);
 
@@ -419,9 +536,36 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
     setCurrentPage(1);
 
     console.log("Number of items:", orderedItems.length);
-  }, [flagsFilter, sosAndMechanicalFilter, showMessages, incidencesFilters, props.alerts]);
+  }, [
+    flagsFilter,
+    sosAndMechanicalFilter,
+    showMessages,
+    incidencesFilters,
+    participantFilter,
+    officialCarFilter,
+    stagesFilter,
+    props.alerts,
+  ]);
 
   const currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
+
+  const getParticipantIdNumber = (id: BigInt) => {
+    if (participantsById.has(id)) {
+      const part = participantsById.get(id) as participantInfo;
+      return part.is_officialcar ? part.number : "" + part.number;
+    } else {
+      return "--" + id.toString();
+    }
+  };
+
+  // const getStageName = (id: string) => {
+
+  //   if (stagesMap.has(id)) {
+  //     return stagesMap.get(id)?.time_control;
+  //   } else {
+  //     return "(unknown, id: " + id.toString() + ")";
+  //   }
+  // };
 
   return (
     <Fragment>
@@ -554,6 +698,14 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
             onFlagsFilterChange={onFlagsFilterChange}
             showMessages={showMessages}
             onMessagesFilterChange={onMessagesFilterChange}
+            participants={props.participants}
+            setParticipantFilter={setParticipantFilter}
+            participantFilter={participantFilter}
+            officialCarFilter={officialCarFilter}
+            setOfficialCarFilter={setOfficialCarFilter}
+            stages={props.stages}
+            setStagesFilter={setStagesFilter}
+            stagesFilter={stagesFilter}
           />
         )}
       </Container>

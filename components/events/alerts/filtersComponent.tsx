@@ -1,5 +1,6 @@
 import React from "react";
 import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import {
@@ -12,13 +13,25 @@ import {
   Col,
 } from "react-bootstrap";
 import {
+  eventInfo,
+  participantInfo,
+  PPTrackerDataServerIoClient,
+} from "server/ppTrackerdataServerIoClient";
+import {
   AlertFilter,
   IncidencesFilter,
   FlagsFilter,
   SoSAndMechanicalFilter,
+  StagesFilter,
 } from "../alertsResume";
 import { set } from "date-fns";
+import { stage } from "@prisma/client";
 //import { access } from "fs";
+
+interface participantOptions {
+  value: string;
+  label: string;
+}
 
 interface FiltersProps {
   onFiltersChange: (filters: AlertFilter) => void;
@@ -32,6 +45,14 @@ interface FiltersProps {
   onFlagsFilterChange: (filters: FlagsFilter) => void;
   showMessages: boolean;
   onMessagesFilterChange: (showMessages: boolean) => void;
+  participants: participantInfo[];
+  setParticipantFilter: (participant: string) => void;
+  participantFilter: string;
+  setOfficialCarFilter: (officialCar: string) => void;
+  officialCarFilter: string;
+  stagesFilter: StagesFilter[];
+  setStagesFilter: (stages: StagesFilter[]) => void;
+  stages: stage[];
 }
 
 const FiltersComponent: React.FC<FiltersProps> = (props) => {
@@ -112,6 +133,78 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
 
   const [startDate, setStartDate] = React.useState("");
   const [endDate, setEndDate] = React.useState("");
+
+  const listOfParticipants = props.participants
+    .sort((a, b) => {
+      if (Number(a.number) < Number(b.number)) return -1;
+      else return 1;
+    })
+    .filter((p) => p.is_officialcar === false);
+
+  // console.log("LISTA DE PARTICIPANTES NUMEROS", listOfParticipants);
+
+  const participantsOptions = listOfParticipants.map((p) => {
+    return {
+      value: p.number,
+      label: p.number,
+    };
+  });
+
+  const listOfOfficialCars = props.participants.filter(
+    (p) => p.is_officialcar === true
+  );
+
+  const officialCarOptions = listOfOfficialCars.map((p) => {
+    return {
+      value: p.number,
+      label: p.number,
+    };
+  });
+
+  const listOfStages = props.stages.sort((a, b) =>
+    a.time_control.localeCompare(b.time_control)
+  );
+
+  const stagesOptions = listOfStages.map((s) => {
+    return {
+      value: s.id.toString(),
+      label: s.time_control,
+    };
+  });
+
+  const handleSetParticipantFilter = (newValue: any, actionMeta: any) => {
+    console.group("Value Changed");
+    console.log(newValue);
+    console.log(`action: ${actionMeta.action}`);
+    console.groupEnd();
+
+    props.setParticipantFilter(newValue ? newValue.value : "");
+  };
+
+  const handleSetOfficialCarFilter = (newValue: any, actionMeta: any) => {
+    console.group("Value Changed");
+    console.log(newValue);
+    console.log(`action: ${actionMeta.action}`);
+    console.groupEnd();
+
+    props.setOfficialCarFilter(newValue ? newValue.value : "");
+  };
+
+  const handleSetStagesFilter = (newValue: any, actionMeta: any) => {
+    console.group("Value Changed");
+    console.log(newValue);
+    console.log(`action: ${actionMeta.action}`);
+    console.groupEnd();
+
+    props.setStagesFilter(newValue);
+  
+    // if (newValue) {
+    //   const newValues = newValue.map((item: any) => item);
+    //   props.setStagesFilter(newValues);
+    // } else {
+    //   props.setStagesFilter([]);
+    // }
+  };
 
   return (
     <Modal show={true} onHide={props.onHide} dialogClassName="sosDetailsModal">
@@ -496,14 +589,19 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                       <div className="fw-bold">Stages:</div>
                     </Col>
                     <Col md={4}>
-                      <Select
-                        id="stages"
-                        name="stages"
-                        value=""
-                        options={[]}
-                        onChange={(e) => {
-                          // Actualiza el estado de tus filtros aquí
-                          // e.g., props.onFiltersChange({ ...props.filters, sos: e.target.checked });
+                      <CreatableSelect
+                        isMulti
+                        defaultValue={props.stagesFilter.filter((filter) => filter.value !== "")}
+                        options={stagesOptions}
+                        isClearable
+                        isSearchable
+                        onChange={handleSetStagesFilter}
+                        styles={{
+                          menu: (base) => ({
+                            ...base,
+                            backgroundColor: "white", // Color de fondo del menú
+                            color: "black", // Color del texto del menú
+                          }),
                         }}
                       />
                     </Col>
@@ -517,14 +615,24 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                       <div className="fw-bold">Participants:</div>
                     </Col>
                     <Col md={4}>
-                      <Select
-                        id="stages"
-                        name="stages"
-                        value=""
-                        options={[]}
-                        onChange={(e) => {
-                          // Actualiza el estado de tus filtros aquí
-                          // e.g., props.onFiltersChange({ ...props.filters, sos: e.target.checked });
+                      <CreatableSelect
+                        defaultValue={{
+                          value: props.participantFilter,
+                          label:
+                            props.participantFilter === ""
+                              ? "participant number"
+                              : props.participantFilter,
+                        }}
+                        options={participantsOptions}
+                        isClearable
+                        isSearchable
+                        onChange={handleSetParticipantFilter}
+                        styles={{
+                          menu: (base) => ({
+                            ...base,
+                            backgroundColor: "white", // Color de fondo del menú
+                            color: "black", // Color del texto del menú
+                          }),
                         }}
                       />
                     </Col>
@@ -532,14 +640,24 @@ const FiltersComponent: React.FC<FiltersProps> = (props) => {
                       <div className="fw-bold">Official cars:</div>
                     </Col>
                     <Col md={4}>
-                      <Select
-                        id="stages"
-                        name="stages"
-                        value=""
-                        options={[]}
-                        onChange={(e) => {
-                          // Actualiza el estado de tus filtros aquí
-                          // e.g., props.onFiltersChange({ ...props.filters, sos: e.target.checked });
+                      <CreatableSelect
+                        defaultValue={{
+                          value: props.officialCarFilter,
+                          label:
+                            props.officialCarFilter === ""
+                              ? "official car number"
+                              : props.officialCarFilter,
+                        }}
+                        options={officialCarOptions}
+                        isClearable
+                        isSearchable
+                        onChange={handleSetOfficialCarFilter}
+                        styles={{
+                          menu: (base) => ({
+                            ...base,
+                            backgroundColor: "white", // Color de fondo del menú
+                            color: "black", // Color del texto del menú
+                          }),
                         }}
                       />
                     </Col>
