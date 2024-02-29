@@ -295,6 +295,123 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
       filteredItems = filteredItems.filter((item) => item.alertType !== 4);
     }
 
+    if(!incidencesFilters.showOverspeedingIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type !== 1;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showReverseIncidense){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type !== 2;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showStopZoneIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type !== 3;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showdnMinTimeIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type !== 4;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showdnMaxTimeIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type !== 5;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showdnInvalidExitIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type !== 6;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showdnOverspeedingIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type !== 7;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showWaypointMissedIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type !== 8;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showdzOverspeedingIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type !== 9;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showForbiddenWaypointIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type !== 10;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showStoppedIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type !== 11;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showOthersIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type > 11;
+        } else return true;
+      }); 
+    }
+
+    if(!incidencesFilters.showOthersIncidence){
+      filteredItems = filteredItems.filter((item) => {
+        if(item.alertType === 3){
+          const incidence = item.alert as apiIncidence;
+          return incidence.type === 0;
+        } else return true;
+      }); 
+    }
+
     let orderedItems = orderItems(filteredItems);
 
     setItems(orderedItems);
@@ -302,7 +419,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
     setCurrentPage(1);
 
     console.log("Number of items:", orderedItems.length);
-  }, [flagsFilter, sosAndMechanicalFilter, showMessages, props.alerts]);
+  }, [flagsFilter, sosAndMechanicalFilter, showMessages, incidencesFilters, props.alerts]);
 
   const currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
 
