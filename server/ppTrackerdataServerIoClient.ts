@@ -385,9 +385,7 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
           });
         }
 
-        for (const [key, participants] of Object.entries(
-          waypointsGrouped
-        )) {
+        for (const [key, participants] of Object.entries(waypointsGrouped)) {
           this.apiWaypointParticipantMap.set(key, participants);
         }
 
@@ -1375,7 +1373,10 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
   ): apiWaypointParticipantTime[] | apiErrorMessage {
     const key = evSlug + "-" + rallySlug + "-" + stageIdx + "-" + wpIdx;
     if (this.apiWaypointParticipantMap.has(key)) {
-      return <apiWaypointParticipantTime[]>this.apiWaypointParticipantMap.get(key);
+      const waypointTimes = <apiWaypointParticipantTime[]>(
+        this.apiWaypointParticipantMap.get(key)
+      );
+      return waypointTimes.sort((a, b) => a.time - b.time);
     } else return { message: "Invalid Parameters" };
   }
 
