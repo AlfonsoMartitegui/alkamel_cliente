@@ -69,7 +69,13 @@ export default NextAuth({
         let promotername = '';
         let apitoken = '';
 
-        if (serializedFetchedUser.roleid === 1 || serializedFetchedUser.roleid === 2 || serializedFetchedUser.roleid === 3) {
+        // si no es rol 1 o 2 no permitir login
+        if(serializedFetchedUser.roleid !== 1 && serializedFetchedUser.roleid !== 2){
+          prisma.$disconnect();
+          throw new Error("User with role not valid!");
+        }
+
+        if (serializedFetchedUser.roleid === 1 || serializedFetchedUser.roleid === 2) {
           const fetchPromoter = await prisma.promoter_user.findFirst({
             where: {
               user_id: Number(serializedFetchedUser.id),
