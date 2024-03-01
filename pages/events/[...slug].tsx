@@ -6,6 +6,7 @@ import CSS from "csstype";
 import superjson from "superjson";
 import { Wrapper, Status } from "@googlemaps/react-wrapper";
 import React, { useEffect, useState, useRef, Fragment } from "react";
+import io from 'socket.io-client';
 import {
   messages,
   participant,
@@ -25,6 +26,7 @@ import {
 } from "server/ppTrackerdataServerIoClient";
 import {
   apiIncidence,
+  apiSosAlertMerge,
   flagCommand,
   FlagType,
   rallyAlert,
@@ -1086,7 +1088,7 @@ const Rally: NextPage<EventProps> = (props) => {
       setZoom(z);
     }
   };
-
+  
   const onParticipantMarkerClick = (id: number) => {
     //console.log("CLICK FROM MAIN>> ON PARTICIPANT ID: ", id);
     const part = ppTrackerClient.rallyParticipantsById
@@ -1101,32 +1103,38 @@ const Rally: NextPage<EventProps> = (props) => {
       //centerMapOnParticipantNumber(p);
     }
   };
-   
-  const hasFilteredAlerts = () => {
-    const filteredAlerts = rallyAlerts.filter((alert) => {
-      if ("ack_time" in alert.alert && "end_time" in alert.alert) {
-        // alert es de tipo apiSosAlertMerge
-        return !alert.alert.ack_time && !alert.alert.end_time;
-      }
-      return false; // Si alert no es de tipo apiSosAlertMerge, incluir en los resultados
-    });
+const [SosrallyAlerts, setSosrallyAlerts] = useState<rallyAlert[]>([]);
 
-    if (filteredAlerts.length > 0) {
-      return true;
+const hasFilteredAlerts = () => {        
+  const filteredAlerts = rallyAlerts.filter((alert) => {
+    if ("ack_time" in alert.alert && "end_time" in alert.alert) {
+      // alert es de tipo apiSosAlertMerge
+      return !alert.alert.ack_time && !alert.alert.end_time;
     }
-    // console.log("filteredAlerts", filteredAlerts.length, filteredAlerts);
-    return false;
-  };
+    return false; // Si alert no es de tipo apiSosAlertMerge, incluir en los resultados
+  });
 
- // const [SosrallyAlerts, setSosrallyAlerts] = useState([]);
-  const [alertsExist, setalertsExist] = useState(false);
+  // Compara las alertas filtradas con SosrallyAlerts
+  const areAlertsEqual = JSON.stringify(filteredAlerts) === JSON.stringify(SosrallyAlerts);
 
-  useEffect(() => {
-    if (hasFilteredAlerts()) {
-      setalertsExist(true);
-      setShowAlertsBar(true);      
-    }
-  }, [rallyAlerts]);
+  if (!areAlertsEqual) {
+    // Si las alertas no son iguales, actualiza SosrallyAlerts y retorna true
+    setSosrallyAlerts(filteredAlerts);
+    return true;
+  }
+
+  // Si las alertas son iguales, retorna false
+  return false;
+};
+
+const [alertsExist, setalertsExist] = useState(false);
+
+useEffect(() => {
+  if (hasFilteredAlerts()) {
+    setalertsExist(true);
+    setShowAlertsBar(true);      
+  }
+}, [rallyAlerts]);
   //const alertsExist = hasFilteredAlerts(); 
 
   useEffect(() => {
@@ -1607,3 +1615,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 };
 
 export default Rally;
+function updateAlerts(rallyId: any) {
+  throw new Error("Function not implemented.");
+}
+

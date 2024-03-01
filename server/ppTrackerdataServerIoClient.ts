@@ -218,6 +218,7 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
       ">>>>>> STARTING INSTANCE OF 'PPTrackerDataServerIoClient' <<<<",
       serverAddress
     );
+    
   }
 
   public updateApiWaypoints(rallyId: number) {
@@ -415,6 +416,7 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
     }
     return null;
   }
+  
   public updateAlerts(rallyId: number) {
     let alerts: rallyAlert[] = [];
 
@@ -477,6 +479,35 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
     //console.log("Settings flags alerts to rally Id ", rallyId, alerts.length);
     this.rallyAlerts.set(rallyId, alerts);
     this.emit("rallyAlerts", rallyId);
+
+    /*setTimeout(() => {
+  
+
+      //let rallyRawIncidencesByRallyId: Map<number, apiSosAlertMerge[]> = new Map<number, apiSosAlertMerge[]>();
+      
+      const incidence: apiSosAlertMerge  = {
+        rally_id: 54,
+        stage_id: 2347,
+        time: 1700327038800,
+        type: 2,
+        subtype: 1,
+        participant: 3526,
+        pptracker_id: 64546,
+        participant_sender: 3526,
+        participant_sender_id: 3526,
+        ack_time: 0,
+        end_time: 0,
+        lat: 0,
+        lon: 0
+      };
+      let incidencias = this.rallySosAlerts.get(54) || [];
+      incidencias.push(incidence);
+      this.rallySosAlerts.set(54, incidencias);
+      this.updateAlerts(54);
+      // Emitir el evento "incidences" con un array que contiene la incidencia
+      //socket.emit("incidences", [incidence]);
+      console.log("envio socket io");
+    }, 10000);*/
   }
 
   // public updateSosAlerts(rallyId: number) {
@@ -1410,6 +1441,7 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
     }
     return undefined;
   }
+  
 }
 
 export const ppTrackerClient = new PPTrackerDataServerIoClient(
