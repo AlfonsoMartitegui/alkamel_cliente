@@ -33,6 +33,11 @@ import SpeedZoneOverspeedListComponent from "components/events/training/speedZon
 
 interface EventProps {
   loggedIn: boolean;
+  userProfile: {
+    id: number;
+    roleid: number;
+    role: string;
+  };
   currentEvent: string;
   currentRallySlug: string;
   currentEventSlug: string;
@@ -439,6 +444,7 @@ const Replay: NextPage<EventProps> = (props) => {
             noItinerary
             noEntryList
             user={null}
+            userProfile={props.userProfile}
           />
           <Row className="border my-3 mx-2">
             <Col>
@@ -665,6 +671,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   return {
     props: {
       loggedIn: session ? true : false,
+      userProfile: session ? session.userProfile : null,
       currentEventSlug: evSlug,
       currentEvent: "",
       currentRallySlug: rallySlug,

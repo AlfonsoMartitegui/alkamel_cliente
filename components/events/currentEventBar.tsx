@@ -67,7 +67,9 @@ const CurrentEventBar: React.FC<EventBarProps> = (props) => {
             </Button>
           </Col>
         )}
-        {props.userIsAdmin &&
+        {props.user &&
+          props.userProfile &&
+          (props.userProfile?.role === "Race Control Operator" || props.userProfile?.role === "Race Control Viewer") &&
           (props.noAlerts === undefined || props.noAlerts === false) && (
             <Col className="p-0 m-1 col-auto">
               <Button
@@ -79,7 +81,9 @@ const CurrentEventBar: React.FC<EventBarProps> = (props) => {
               </Button>
             </Col>
           )}
-        {props.userIsAdmin &&
+        {props.user &&
+          props.userProfile &&
+          (props.userProfile?.role === "Race Control Operator" || props.userProfile?.role === "Race Control Viewer") &&
           (props.noOfficialCars === undefined ||
             props.noOfficialCars === false) && (
             <Col className="p-0 m-1 col-auto">

@@ -1140,7 +1140,7 @@ const Rally: NextPage<EventProps> = (props) => {
         ></input>
         <Container fluid style={{ height: "100%" }}>
           <CurrentEventBar
-            userIsAdmin={props.loggedIn}
+            userIsAdmin={props.userProfile && (props.userProfile.role === "Race Control Operator" || "Race Control Viewer") ? true : false}
             event={activeEvent}
             rally={rally}
             onChangeRallyClick={onChangeRallyClick}
@@ -1183,7 +1183,7 @@ const Rally: NextPage<EventProps> = (props) => {
             {showStageDetails ? (
               <Col xs="12" sm="12" md="4" lg="2" xl="2" style={verticalDivider}>
                 <StageDetails
-                  userIsAdmin={props.loggedIn}
+                  userIsAdmin={props.userProfile && (props.userProfile.role === "Race Control Operator" || "Race Control Viewer") ? true : false}
                   waypointRef={stageWaypointRef}
                   rally={rally}
                   stage={selectedStage}
@@ -1209,7 +1209,7 @@ const Rally: NextPage<EventProps> = (props) => {
                   participant={selectedParticipant}
                   onHide={onParticipantHide}
                   onCenter={onParticipantCenterMap}
-                  userIsAdmin={props.loggedIn}
+                  userIsAdmin={props.userProfile && (props.userProfile.role === "Race Control Operator" || "Race Control Viewer") ? true : false}
                   rally={rally}
                   ppTrackerClient={ppTrackerClient}
                 />
@@ -1225,7 +1225,7 @@ const Rally: NextPage<EventProps> = (props) => {
                   officialCar={selectedOfficialCar}
                   onHide={onOfficialCarHide}
                   onCenter={onOfficialCarCenterMap}
-                  userIsAdmin={props.loggedIn}
+                  userIsAdmin={props.userProfile && (props.userProfile.role === "Race Control Operator" || "Race Control Viewer") ? true : false}
                   rally={rally}
                   ppTrackerClient={ppTrackerClient}
                 />
@@ -1566,7 +1566,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const messagestest = superjson.stringify(messages);
   const testset = superjson.parse(messagestest);
 
-  console.log("SET DE MENSAJES DE ALERTA:", testset);
+  // console.log("SET DE MENSAJES DE ALERTA:", testset);
   // console.log("ALERT ICONS:", alertIcons);
 
   prismaClient.$disconnect();

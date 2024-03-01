@@ -35,6 +35,11 @@ import { initWaypointIconMarkers } from "components/events/maps/resources";
 
 interface EventProps {
   loggedIn: boolean;
+  userProfile: {
+    id: number;
+    roleid: number;
+    role: string;
+  };
   currentEvent: string;
   currentRallySlug: string;
   currentEventSlug: string;
@@ -727,6 +732,7 @@ const Replay: NextPage<EventProps> = (props) => {
             noNewMessage
             noOfficialCars
             user={null}
+            userProfile={props.userProfile}
           />
           {showEntryListBar ? (
             <ReplayEntryBar
@@ -903,6 +909,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   return {
     props: {
       loggedIn: session ? true : false,
+      userProfile: session ? session.userProfile : null,
       currentEventSlug: evSlug,
       currentEvent: "",
       currentRallySlug: rallySlug,
