@@ -1295,6 +1295,17 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
     }
     return undefined;
   }
+
+  public getAPIRallyWaypointTimes(
+    evSlug: string,
+    rallySlug: string,
+    stageIdx: string
+  ): apiParticipantWaypointTimes[] | apiErrorMessage {
+    const key = evSlug + "-" + rallySlug + "-" + stageIdx;
+    if (this.apiWaypointsMap.has(key)) {
+      return <apiParticipantWaypointTimes[]>this.apiWaypointsMap.get(key);
+    } else return { message: "Invalid Parameters" };
+  }
 }
 
 export const ppTrackerClient = new PPTrackerDataServerIoClient(

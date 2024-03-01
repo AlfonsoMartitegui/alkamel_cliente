@@ -66,6 +66,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<Data>) => {
               ppTrackerClient.getAPIRallyStageTimes(slug[0], slug[1], slug[2])
             );
         }
+      } else if (slug.length === 6) {
+        console.log("TESTING NEW SLUG REQUEST: ", slug);
+        res.status(200).json({ error: "Not implemented" });
       }
     }
   }

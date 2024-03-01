@@ -526,7 +526,13 @@ const Rally: NextPage<EventProps> = (props) => {
 
         let ctaLayer = new google.maps.KmlLayer({
           url:
-            props.s3PublicPath + "/" + props.s3RallyKmlFolder + "/" + r.id + "/" + r.rally_kml_file,
+            props.s3PublicPath +
+            "/" +
+            props.s3RallyKmlFolder +
+            "/" +
+            r.id +
+            "/" +
+            r.rally_kml_file,
           screenOverlays: true,
           map: undefined,
           zIndex: 2000,
@@ -546,9 +552,15 @@ const Rally: NextPage<EventProps> = (props) => {
 
         let ctaRCLayer = new google.maps.KmlLayer({
           url:
-          props.s3PublicPath + "/" + props.s3RallyRcKmlFolder + "/" + r.id + "/" + r.rally_rc_kml_file,
-            // "https://pptrackerwww.s3.us-west-2.amazonaws.com/maps/tracks/" +
-            // r.rally_rc_kml_file,
+            props.s3PublicPath +
+            "/" +
+            props.s3RallyRcKmlFolder +
+            "/" +
+            r.id +
+            "/" +
+            r.rally_rc_kml_file,
+          // "https://pptrackerwww.s3.us-west-2.amazonaws.com/maps/tracks/" +
+          // r.rally_rc_kml_file,
           screenOverlays: true,
           map: undefined,
           zIndex: 2000,
@@ -558,7 +570,11 @@ const Rally: NextPage<EventProps> = (props) => {
         // if (props.loggedIn || r.show_track_on_viewers) {
         //   setRcTrackKmlLayer(ctaRCLayer);
         // }
-        if (props.loggedIn && (props.userProfile.role === "Race Control Operator" || props.userProfile.role === "Race Control Viewer")) {
+        if (
+          props.loggedIn &&
+          (props.userProfile.role === "Race Control Operator" ||
+            props.userProfile.role === "Race Control Viewer")
+        ) {
           setRcTrackKmlLayer(ctaRCLayer);
         }
         const rcviewport = ctaRCLayer.getDefaultViewport();
@@ -1331,7 +1347,10 @@ const Rally: NextPage<EventProps> = (props) => {
               {/* Basic form for controlling center and zoom of map. */}
               {/*form*/}
             </Col>
-            { profile && (showAlertsBar || alertsExist) ? (
+            {profile &&
+            ((profile && profile.role === "Race Control Operator") ||
+              profile.role === "Race Control Viewer") &&
+            (showAlertsBar || alertsExist) ? (
               <Col
                 xs="12"
                 sm="12"
@@ -1342,24 +1361,26 @@ const Rally: NextPage<EventProps> = (props) => {
                 className="bg-dark px-0"
                 ref={alertsDiv}
               >
-                {alertsExist && (profile && profile.role === "Race Control Operator" || profile.role === "Race Control Viewer") && (
-                  <div
-                    className="mb-2"
-                    style={{ height: "400px", overflow: "auto" }}
-                  >
-                    <AlertsResume2
-                      event={activeEvent}
-                      maxHeight={contentHeight}
-                      alerts={rallyAlerts}
-                      participants={participants}
-                      stages={rally ? rally.stages : []}
-                      ppTrackerClient={ppTrackerClient}
-                      onCenterMapOnParticipant={onCenterMapOnParticipant}
-                      alertIcons={props.alertIcons}
-                      onParticipantClick={onParticipantClick2}
-                    ></AlertsResume2>
-                  </div>
-                )}
+                {alertsExist &&
+                  ((profile && profile.role === "Race Control Operator") ||
+                    profile.role === "Race Control Viewer") && (
+                    <div
+                      className="mb-2"
+                      style={{ height: "400px", overflow: "auto" }}
+                    >
+                      <AlertsResume2
+                        event={activeEvent}
+                        maxHeight={contentHeight}
+                        alerts={rallyAlerts}
+                        participants={participants}
+                        stages={rally ? rally.stages : []}
+                        ppTrackerClient={ppTrackerClient}
+                        onCenterMapOnParticipant={onCenterMapOnParticipant}
+                        alertIcons={props.alertIcons}
+                        onParticipantClick={onParticipantClick2}
+                      ></AlertsResume2>
+                    </div>
+                  )}
 
                 {showAlertsBar && (
                   <AlertsResume
@@ -1465,7 +1486,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   const options = await prismaClient.application_settings.findFirst({
     orderBy: {
-      id: 'asc',
+      id: "asc",
     },
   });
 
@@ -1545,7 +1566,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const messagestest = superjson.stringify(messages);
   const testset = superjson.parse(messagestest);
 
-  console.log ("SET DE MENSAJES DE ALERTA:" , testset);
+  console.log("SET DE MENSAJES DE ALERTA:", testset);
   // console.log("ALERT ICONS:", alertIcons);
 
   prismaClient.$disconnect();
