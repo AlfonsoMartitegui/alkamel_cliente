@@ -24,6 +24,7 @@ import {
   participantStatus,
 } from "server/ppTrackerdataServerIoClient";
 import {
+  apiIncidence,
   flagCommand,
   FlagType,
   rallyAlert,
@@ -48,6 +49,7 @@ import {
 import { Alert } from "bootstrap";
 import AlertsResume2 from "components/events/alertsResume2";
 import { get } from "http";
+import { set } from "date-fns";
 
 interface AlertIcon {
   id: number;
@@ -1099,7 +1101,7 @@ const Rally: NextPage<EventProps> = (props) => {
       //centerMapOnParticipantNumber(p);
     }
   };
-
+   
   const hasFilteredAlerts = () => {
     const filteredAlerts = rallyAlerts.filter((alert) => {
       if ("ack_time" in alert.alert && "end_time" in alert.alert) {
@@ -1116,7 +1118,16 @@ const Rally: NextPage<EventProps> = (props) => {
     return false;
   };
 
-  const alertsExist = hasFilteredAlerts();
+ // const [SosrallyAlerts, setSosrallyAlerts] = useState([]);
+  const [alertsExist, setalertsExist] = useState(false);
+
+  useEffect(() => {
+    if (hasFilteredAlerts()) {
+      setalertsExist(true);
+      setShowAlertsBar(true);      
+    }
+  }, [rallyAlerts]);
+  //const alertsExist = hasFilteredAlerts(); 
 
   useEffect(() => {
     updateMapSize();
@@ -1347,10 +1358,10 @@ const Rally: NextPage<EventProps> = (props) => {
               {/* Basic form for controlling center and zoom of map. */}
               {/*form*/}
             </Col>
-            {profile &&
+            {profile &&  //alertas
             ((profile && profile.role === "Race Control Operator") ||
               profile.role === "Race Control Viewer") &&
-            (showAlertsBar || alertsExist) ? (
+            (showAlertsBar ) ? (
               <Col
                 xs="12"
                 sm="12"
@@ -1368,7 +1379,7 @@ const Rally: NextPage<EventProps> = (props) => {
                       className="mb-2"
                       style={{ height: "400px", overflow: "auto" }}
                     >
-                      <AlertsResume2
+                      <AlertsResume2 // alertas siempre
                         event={activeEvent}
                         maxHeight={contentHeight}
                         alerts={rallyAlerts}
@@ -1382,7 +1393,7 @@ const Rally: NextPage<EventProps> = (props) => {
                     </div>
                   )}
 
-                {showAlertsBar && (
+                {showAlertsBar && (//alertas
                   <AlertsResume
                     event={activeEvent}
                     maxHeight={contentHeight}

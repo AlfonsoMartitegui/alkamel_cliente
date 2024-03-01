@@ -621,7 +621,8 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
       }
     });
 
-    this.socket.on("incidences", (incidences) => {
+    this.socket.on("incidences", (incidences) => { //alfon
+      console.log("GETTING INCIDENCES FOR RALLY ?? ");
       if (incidences.length > 0) {
         const firstIncidence = incidences[0];
         console.log("FIRST INCIDENCE: ", firstIncidence);
