@@ -23,6 +23,7 @@ import {
   apiWaypoint,
   apiWaypointTime,
   apiParticipantWaypointTimes,
+  apiWaypointParticipantTime,
 } from "lib/apiV1Schema";
 import bcrypt from "bcryptjs";
 import superjson from "superjson";
@@ -206,6 +207,7 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
   apiActiveEventsBySlug = new Map<string, apiEvent>();
   apiActiveEventsInfoBySlug = new Map<string, apiEventInfo>();
   apiWaypointsMap = new Map<string, apiParticipantWaypointTimes[]>();
+  apiWaypointParticipantMap = new Map<string, apiWaypointParticipantTime[]>();
   apiRallyParticipants = new Map<number, apiParticipant[]>();
   apiRallyStages = new Map<number, apiStage[]>();
 
@@ -224,6 +226,8 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
         rallyId
       ) as apiWaypointEvent[];
 
+      // console.log("SE HA OBTENIDO LOS WAYPOINTS PARA EL EVENT: ", rawWpEvents);
+
       const rallyInfo = this.getRallyWithId(rallyId);
       if (rallyInfo === null) return;
       const eventInfo = this.getEventWithId(rallyInfo.event_id);
@@ -236,6 +240,8 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
         }
       }
 
+      // console.log("WAYPOINTS BY ID: ", waypointsById);
+
       let participantsById = new Map<number, participant>();
       for (var p of rallyInfo.participants) {
         participantsById.set(Number(p.id), p);
@@ -247,7 +253,13 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
       }
       const preKey = eventInfo.slug + "-" + rallyInfo.slug + "-";
 
+      // declara waypoints por stage que es del tipo key, {index del waypoint, tiempo }
       let waypointsByStage = new Map<string, Map<number, apiWaypointTime[]>>();
+
+      // console.log("Waypoints by Stage: ", waypointsByStage);
+
+      // Crear key que es evento - rally - stageidx - waypoint idx
+      // Crear un map con key que tenga de valores un map de key waypoint idx {participante numero, tiempo}
 
       for (var wpe of rawWpEvents) {
         if (wpe.type === 3 && stagesById.has(wpe.stage_id)) {
@@ -262,20 +274,45 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
             number,
             apiWaypointTime[]
           >;
+          // console.log("WAYPOINTS BY STAGE:", JSON.stringify(wpByStage));
 
           let wpData: apiWaypointTime[] = [];
+
           if (wpByStage.has(wpe.participant)) {
             wpData = wpByStage.get(wpe.participant) as apiWaypointTime[];
           }
+
           const idx = waypointsById.has(wpe.waypoint_id)
             ? (waypointsById.get(wpe.waypoint_id) as track_waypoints).idx
             : 0;
           const wp: apiWaypointTime = { idx: idx, time: Number(wpe.time) };
+          // apiWaypointParticipantTime = {participant numero: string, waypoint time: number}
+          // const wpp: apiWaypointParticipantTime = { participant: wp , time: Number(wpe.time) };
+          // let wpp: apiWaypointParticipantTime = { participant: wpe.participant, time: Number(wpe.time) };
           wpData.push(wp);
           wpByStage.set(wpe.participant, wpData);
           waypointsByStage.set(key, wpByStage);
         }
       }
+
+      // console.log("WAYPOINTS BY STAGE: ", waypointsByStage.keys());
+
+      // console.log("WAYPOINTS BY STAGE: ", waypointsByStage.get("pozoblanco23-rally-1"));
+
+      //   3460 => [
+      //     { idx: 6, time: 1700226914800 },
+      //     { idx: 5, time: 1700226850200 },
+      //     { idx: 4, time: 1700226667400 },
+      //     { idx: 3, time: 1700226582800 },
+      //     { idx: 2, time: 1700226467800 },
+      //     { idx: 1, time: 1700225614200 },
+      //     { idx: 1, time: 1700225187800 },
+      //     { idx: 1, time: 1700225116400 },
+      //     { idx: 1, time: 1700224393600 },
+      //     { idx: 0, time: 1700224243600 },
+      //     { idx: 0, time: 1700224243600 }
+      //   ]
+      // }
 
       for (var k of waypointsByStage.keys()) {
         let participantTimes: apiParticipantWaypointTimes[] = [];
@@ -293,6 +330,70 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
         }
 
         this.apiWaypointsMap.set(k, participantTimes);
+      }
+
+      // AQUI NUEVO API
+      // const waypointsGrouped: Record<
+      //     string,
+      //     { participantNumber: string; time: number }[]
+      //   > = {};
+
+      for (var k of waypointsByStage.keys()) {
+        let waypointTimes: {
+          waypointIdx: number;
+          number: string;
+          time: number;
+        }[] = [];
+        const times = waypointsByStage.get(k) as Map<number, apiWaypointTime[]>;
+
+        for (var partId of times.keys()) {
+          const partNumber = participantsById.has(partId)
+            ? (participantsById.get(partId) as participant).number
+            : "unknown";
+
+          const waypointTimesArray = times.get(partId) as apiWaypointTime[];
+
+          for (const waypointTime of waypointTimesArray) {
+            waypointTimes.push({
+              waypointIdx: waypointTime.idx,
+              number: partNumber,
+              time: waypointTime.time,
+            });
+          }
+        }
+
+        // console.log("WAYPOINT TIMES: ", waypointTimes);
+
+        // Agrupar por waypointIdx
+        const waypointsGrouped: Record<
+          string,
+          { number: string; time: number }[]
+        > = {};
+
+        for (const item of waypointTimes) {
+          const { waypointIdx, number, time } = item;
+
+          const newKey = k + "-" + waypointIdx;
+
+          if (!waypointsGrouped[newKey]) {
+            waypointsGrouped[newKey] = [];
+          }
+
+          waypointsGrouped[newKey].push({
+            number,
+            time,
+          });
+        }
+
+        for (const [key, participants] of Object.entries(
+          waypointsGrouped
+        )) {
+          this.apiWaypointParticipantMap.set(key, participants);
+        }
+
+        // console.log("WAYPOINT TIMES GROUPED: ", this.apiWaypointParticipantMap);
+
+        // this.apiWaypointsMap.set(k, waypointTimes);
       }
     }
   }
@@ -1266,6 +1367,18 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
     } else return { message: "Invalid Parameters" };
   }
 
+  public getAPIRallyWaypointTimes(
+    evSlug: string,
+    rallySlug: string,
+    stageIdx: string,
+    wpIdx: string
+  ): apiWaypointParticipantTime[] | apiErrorMessage {
+    const key = evSlug + "-" + rallySlug + "-" + stageIdx + "-" + wpIdx;
+    if (this.apiWaypointParticipantMap.has(key)) {
+      return <apiWaypointParticipantTime[]>this.apiWaypointParticipantMap.get(key);
+    } else return { message: "Invalid Parameters" };
+  }
+
   public getRallyParticipantWithNumber(
     rallyId: number,
     participantNumber: string
@@ -1294,17 +1407,6 @@ export class PPTrackerDataServerIoClient extends EventEmitter {
       }
     }
     return undefined;
-  }
-
-  public getAPIRallyWaypointTimes(
-    evSlug: string,
-    rallySlug: string,
-    stageIdx: string
-  ): apiParticipantWaypointTimes[] | apiErrorMessage {
-    const key = evSlug + "-" + rallySlug + "-" + stageIdx;
-    if (this.apiWaypointsMap.has(key)) {
-      return <apiParticipantWaypointTimes[]>this.apiWaypointsMap.get(key);
-    } else return { message: "Invalid Parameters" };
   }
 }
 

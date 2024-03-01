@@ -5,6 +5,7 @@ import {
   apiParticipant,
   apiStage,
   apiParticipantWaypointTimes,
+  apiWaypointParticipantTime,
 } from "lib/apiV1Schema";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { ppTrackerClient } from "../../../../server/ppTrackerdataServerIoClient";
@@ -17,6 +18,7 @@ type Data =
   | apiRally
   | apiErrorMessage
   | apiParticipantWaypointTimes[]
+  | apiWaypointParticipantTime[]
   | { error: string };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<Data>) => {
@@ -29,7 +31,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<Data>) => {
 
   if (req.method == "GET") {
     const slug = req.query.slug;
-    const auth = await checkLocalRegister(req.query.auth as string, slug as string);
+    const auth = await checkLocalRegister(
+      req.query.auth as string,
+      slug as string
+    );
     if (auth) {
       console.log(auth);
     }
@@ -39,7 +44,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<Data>) => {
       console.log("Not authorized");
       return;
     }
-    
+
     console.log("NEW 'event slug' request for >>>>>>>", slug);
     if (Array.isArray(slug)) {
       if (slug.length === 1) {
@@ -68,7 +73,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<Data>) => {
         }
       } else if (slug.length === 6) {
         console.log("TESTING NEW SLUG REQUEST: ", slug);
-        res.status(200).json({ error: "Not implemented" });
+        res
+          .status(200)
+          .json(
+            ppTrackerClient.getAPIRallyWaypointTimes(slug[0], slug[1], slug[2], slug[4])
+          );
       }
     }
   }

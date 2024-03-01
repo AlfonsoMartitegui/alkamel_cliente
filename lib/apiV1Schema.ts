@@ -77,3 +77,13 @@ export interface apiErrorMessage {
   message: string;
   details?: string;
 }
+
+export interface apiWaypointParticipantTime {
+  number: string;
+  time: number;
+}
+
+export interface apiWaypointParticipantTimes {
+  waypoint: number;
+  times: apiWaypointParticipantTime[];
+}
