@@ -66,10 +66,22 @@ export default NextAuth({
         };
 
         let promoterid = null;
-        let promotername = '';
-        let apitoken = '';
+        let promotername = "";
+        let apitoken = "";
 
-        if (serializedFetchedUser.roleid === 1 || serializedFetchedUser.roleid === 2 || serializedFetchedUser.roleid === 3) {
+        // si no es rol 1 o 2 no permitir login
+        if (
+          serializedFetchedUser.roleid !== 1 &&
+          serializedFetchedUser.roleid !== 2
+        ) {
+          prisma.$disconnect();
+          throw new Error("User with role not valid!");
+        }
+
+        if (
+          serializedFetchedUser.roleid === 1 ||
+          serializedFetchedUser.roleid === 2
+        ) {
           const fetchPromoter = await prisma.promoter_user.findFirst({
             where: {
               user_id: Number(serializedFetchedUser.id),
@@ -79,11 +91,11 @@ export default NextAuth({
                 select: {
                   id: true,
                   name: true,
-                  promoter_user:{
+                  promoter_user: {
                     select: {
                       api_token: true,
-                    }
-                  }
+                    },
+                  },
                 },
               },
             },
@@ -137,11 +149,11 @@ export default NextAuth({
         // DEVOLVER LA INFORMACION DEL USUARIO
         console.log("Este es el usuario serializado: ", serializedUser);
 
-       return user;
+        return user;
       },
     }),
   ],
-  callbacks:{
+  callbacks: {
     async jwt({ token, user }: any) {
       // console.log('Este es el user: ', user);
       // Añade nuevo campo al token de la session si se ha obtenido el user
@@ -157,7 +169,7 @@ export default NextAuth({
           promoterid: user.promoterid,
           promoter: user.promotername,
           apitoken: user.apitoken,
-        }        
+        };
       }
       // console.log('ESTE ES EL TOKEN: ', token);
       // console.log('ESTE ES EL TOKEN.TEST: ', token.profile);
@@ -165,7 +177,7 @@ export default NextAuth({
     },
     async session({ session, token }: any) {
       // Manda los datos del token a la session
-      if(token){
+      if (token) {
         session.userProfile = token.userProfile;
       }
       return session;

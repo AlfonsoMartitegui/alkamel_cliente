@@ -30,8 +30,67 @@ const OfficialCarsBar: React.FC<OfficialCarsBarProps> = (props) => {
                 {p.number}
               </Button>
             ))}
+          <Button
+            variant="success"
+            className="fw-bold py-0 px-1 my-0 ms-1 me-0"
+            type="button"
+            onClick={() => {}}
+          >
+            Show Always
+          </Button>
+          <Button
+            variant="success"
+            className="fw-bold py-0 px-1 my-0 ms-1 me-0"
+            type="button"
+            onClick={() => {}}
+          >
+            Hide Always
+          </Button>
+          <Button
+            variant="success"
+            className="fw-bold py-0 px-1 my-0 ms-1 me-0"
+            type="button"
+            onClick={() => {}}
+          >
+            Hide if stopped
+          </Button>
         </Col>
       </Row>
+      {/* <Row>
+        <Col className="col-md-1 p-0 m-1"></Col>
+        <Col className="col-auto p-0 m-1">
+          <Button
+            variant="warning"
+            className="btn-sm fw-bold"
+            type="button"
+            onClick={() => {}}
+          >
+            Show Always
+          </Button>
+        </Col>
+
+        <Col className="col-auto p-0 m-1">
+          <Button
+            variant="warning"
+            className="btn-sm fw-bold"
+            type="button"
+            onClick={() => {}}
+          >
+            Hide Always
+          </Button>
+        </Col>
+
+        <Col className="col-auto p-0 m-1">
+          <Button
+            variant="warning"
+            className="btn-sm fw-bold"
+            type="button"
+            onClick={() => {}}
+          >
+            Hide if stopped
+          </Button>
+        </Col>
+      </Row> */}
       <Row>
         <hr className="p-0 m-0" />
       </Row>

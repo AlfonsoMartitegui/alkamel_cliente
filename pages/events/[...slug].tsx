@@ -1336,7 +1336,7 @@ const Rally: NextPage<EventProps> = (props) => {
                 {alertsExist &&
                   ((profile && profile.role === "Race Control Operator") ||
                     profile.role === "Race Control Viewer") && (
-                    <div className="mb-2" style={{ height: "250px" }}>
+                    <div className="mb-2" style={{ height: "320px" }}>
                       <AlertsResume2 // alertas siempre
                         event={activeEvent}
                         maxHeight={contentHeight}
