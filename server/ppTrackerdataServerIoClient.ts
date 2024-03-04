@@ -89,11 +89,18 @@ export enum participantStatus {
   transport_disconnected,
   stage_moving,
   stage_stopped,
-  stage_stopped_warning,
+  stage_disconnected,
   stage_sos,
-  stage_sos_viewer,
-  stage_sos_ok,
-  stage_sos_ok_viewer,
+  stage_blue_flag_received,
+  stage_blue_flag_sent,
+  stage_yellow_flag,
+  stage_red_flag,
+  stage_breakdown,
+  stage_breakdown_road_blocked,
+  stage_breakdown_road_not_blocked,
+  stage_breakdown_tyre_change,
+  stage_autodetect_crash,
+  stage_autodetect_reverse,
   unknown,
 }
 
@@ -111,10 +118,12 @@ export const getParticipantStatus = (
   const dMillis = d.getTime();
 
   let isTransport = true;
+
   const isStopped =
     (p.lastStopTime !== undefined &&
       dMillis - STOPPED_AFTER_X_SECONDS * 1000 >= p.lastStopTime) ||
     (p.position && dMillis - STOPPED_AFTER_X_SECONDS * 1000 >= p.position.time);
+
   const isStoppendWarning =
     !isStopped &&
     ((p.lastStopTime !== undefined &&
@@ -123,7 +132,11 @@ export const getParticipantStatus = (
         dMillis - STOPPED_WARNING_AT_X_SECONDS * 1000 >= p.position.time));
 
   const isSos = p.lastSosTime !== undefined && p.lastSosIsFinish;
-  const isSosOk = p.lastSosIsFinish;
+  let isRedFlag = false;
+  let isYellowFlag = false;
+  let isBlueFlagSent = false;
+  let isBlueFlagReceived = false;
+
   const isDisconnected =
     p.position && dMillis - STOPPED_AFTER_X_SECONDS * 1000 >= p.position.time;
 
@@ -138,28 +151,127 @@ export const getParticipantStatus = (
       : participantStatus.transport_stopped;
   }
 
-  if (isTransport && isDisconnected && user !== undefined) {
-    return participantStatus.transport_disconnected;
-  } else if (isTransport && (isStopped || isStoppendWarning)) {
-    return participantStatus.transport_stopped;
-  } else if (isTransport && !isStopped) {
-    return participantStatus.transport_moving;
-  } else if (user === undefined) {
+  if (user !== undefined) {
     if (isSos) {
-      return isSosOk
-        ? participantStatus.stage_sos_ok
-        : participantStatus.stage_sos;
+      //TODO: evaluate for breakDown, or SOS Type
+      return participantStatus.stage_sos;
+    } else if (isRedFlag) {
+      return participantStatus.stage_red_flag;
+    } else if (isYellowFlag) {
+      return participantStatus.stage_yellow_flag;
+    } else if (isBlueFlagReceived) {
+      return participantStatus.stage_blue_flag_received;
+    } else if (isBlueFlagSent) {
+      return participantStatus.stage_blue_flag_sent;
+    } else if (isDisconnected) {
+      return isTransport
+        ? participantStatus.transport_disconnected
+        : participantStatus.stage_disconnected;
     } else if (isStoppendWarning) {
-      return participantStatus.stage_stopped_warning;
-    } else {
-      return isStopped
-        ? participantStatus.stage_stopped
+      return isTransport
+        ? participantStatus.transport_stopped
+        : participantStatus.stage_stopped;
+    } else if (p.position) {
+      return isTransport
+        ? participantStatus.transport_moving
         : participantStatus.stage_moving;
+    } else {
+      return participantStatus.unknown;
     }
+    //Race Control Viewer or RC Operator
   } else {
-    return isStopped
-      ? participantStatus.stage_stopped
-      : participantStatus.stage_moving;
+    //Not logged: only basic colors
+    if (isTransport) {
+      return participantStatus.transport_moving;
+    } else {
+      return participantStatus.transport_disconnected;
+    }
+  }
+};
+
+export const getParticipantBackgroundColor = (
+  p: participantInfo,
+  stages: Map<bigint, stage>,
+  user:
+    | (DefaultUser & {
+        id: string;
+        role: string;
+      })
+    | undefined
+) => {
+  const st = getParticipantStatus(p, stages, user);
+  switch (st) {
+    case participantStatus.transport_disconnected:
+    case participantStatus.stage_disconnected:
+      return "#9878bf"; //purple
+    case participantStatus.transport_moving:
+      return "#000000";
+    case participantStatus.stage_stopped:
+    case participantStatus.transport_stopped:
+      return "#a9b3b2"; //gray
+    case participantStatus.stage_blue_flag_sent:
+      return "#4598ff";
+    case participantStatus.stage_breakdown:
+      return "#ffff00";
+    case participantStatus.stage_breakdown_road_not_blocked:
+    case participantStatus.stage_breakdown_tyre_change:
+      return "#00ff00";
+    case participantStatus.stage_breakdown_road_blocked:
+    case participantStatus.stage_autodetect_crash:
+    case participantStatus.stage_autodetect_reverse:
+      return "#ff7f00";
+    case participantStatus.stage_sos:
+      return "#ff0000";
+    default:
+      return "#ffffff";
+  }
+};
+
+export const getParticipantBorderColor = (
+  p: participantInfo,
+  stages: Map<bigint, stage>,
+  user:
+    | (DefaultUser & {
+        id: string;
+        role: string;
+      })
+    | undefined
+) => {
+  const st = getParticipantStatus(p, stages, user);
+  switch (st) {
+    case participantStatus.transport_moving:
+    case participantStatus.transport_disconnected:
+    case participantStatus.transport_stopped:
+      return "#a9b3b2"; //gray
+    case participantStatus.stage_yellow_flag:
+      return "#ffff00";
+    case participantStatus.stage_red_flag:
+      return "#ff0000";
+    default:
+      return "#ffffff";
+  }
+};
+
+export const getParticipantTextColor = (
+  p: participantInfo,
+  stages: Map<bigint, stage>,
+  user:
+    | (DefaultUser & {
+        id: string;
+        role: string;
+      })
+    | undefined
+) => {
+  const st = getParticipantStatus(p, stages, user);
+  switch (st) {
+    case participantStatus.transport_moving:
+      return "#a9b3b2";
+    case participantStatus.stage_sos:
+    case participantStatus.stage_autodetect_crash:
+    case participantStatus.stage_autodetect_reverse:
+      return "#ffffff";
+    default:
+      return "#000000";
   }
 };
 
