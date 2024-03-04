@@ -209,7 +209,9 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
 
   return (
     <tr>
-      <td>{getIncidenceTypeAsString(props.incidence)}</td>
+      <td className="m-0 px-3 pt-2- pb-0">
+        {getIncidenceTypeAsString(props.incidence)}
+      </td>
       <td>
         <Button
           onClick={() =>
@@ -217,16 +219,16 @@ const IncidenceComponent: React.FC<incidenceAlertProps> = (props) => {
               getParticipantIdNumber(BigInt(props.incidence.participantId))
             )
           }
-          className={`py-0 px-1`}
+          className={
+            "py-0 px-1 link-info link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"
+          }
           size="sm"
-          variant="warning"
           type="button"
-          // style={{ border: "none", background: "none", color: "white", width: "100%", height: "100%"}}
+          variant="link"
         >
           {getParticipantIdNumber(BigInt(props.incidence.participantId))}
         </Button>
       </td>
-
       <td>
         {millisToCurrentDate(
           props.incidence.startTime,

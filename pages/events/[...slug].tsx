@@ -6,7 +6,7 @@ import CSS from "csstype";
 import superjson from "superjson";
 import { Wrapper, Status } from "@googlemaps/react-wrapper";
 import React, { useEffect, useState, useRef, Fragment } from "react";
-import io from 'socket.io-client';
+import io from "socket.io-client";
 import {
   messages,
   participant,
@@ -23,6 +23,7 @@ import {
   participantInfo,
   getParticipantStatus,
   participantStatus,
+  getParticipantTextColor,
 } from "server/ppTrackerdataServerIoClient";
 import {
   apiIncidence,
@@ -131,71 +132,6 @@ const Rally: NextPage<EventProps> = (props) => {
   const session = useSession();
   const profile = session ? session.data?.userProfile : null;
 
-  const getParticipantMarkerTextColorByStatus = (pInfo: participantInfo) => {
-    if (pInfo.is_officialcar) {
-      return "#000";
-    } else {
-      const st = getParticipantStatus(
-        pInfo,
-        rallyStages,
-        props.user !== null ? props.user : undefined
-      );
-
-      switch (st) {
-        case participantStatus.transport_disconnected:
-          return "#ffc107"; //warning
-        case participantStatus.transport_moving:
-          return "#fff";
-        case participantStatus.transport_stopped:
-          return "#fff";
-        case participantStatus.stage_moving:
-          return "#000";
-        case participantStatus.stage_stopped:
-          return "#000";
-        case participantStatus.stage_stopped_warning:
-          return "#ffc107"; //warning
-        case participantStatus.stage_sos:
-          return "#fff";
-        case participantStatus.stage_sos_viewer:
-          return "#000";
-        case participantStatus.stage_sos_ok:
-          return "#fff";
-        case participantStatus.stage_sos_ok_viewer:
-          return "#000";
-        case participantStatus.unknown:
-          return "#000";
-      }
-
-      // let isTransport = true;
-      // if (pInfo.position) {
-      //   //Calculate isTransport
-      //   if (
-      //     rInfo &&
-      //     pInfo.position?.stage_id > 0 &&
-      //     rInfo.stages !== undefined
-      //   ) {
-      //     for (var st of rInfo.stages) {
-      //       if (Number(st.id) === pInfo.position.stage_id) {
-      //         isTransport = st.stage_type_id !== 2n;
-      //       }
-      //     }
-      //   }
-      //   //Calculate isStopped
-      //   const d = new Date();
-      //   const dMillis = d.getTime();
-      //   if (dMillis - 60 * 1000 < pInfo.position.time) {
-      //     //RUNNING
-      //     return isTransport ? "#fff" : "#000";
-      //   } else {
-      //     //STOPPED
-      //     return isTransport ? "#000" : "#000";
-      //   }
-      // } else {
-      //   return markers.get("gray") as string;
-      // }
-    }
-  };
-
   const getWaypointTypeFor = (w: track_waypoints) => {
     if (waypointTypes.has(w.waypoint_type_id)) {
       return waypointTypes.get(w.waypoint_type_id);
@@ -294,22 +230,9 @@ const Rally: NextPage<EventProps> = (props) => {
         case participantStatus.stage_stopped:
           return markers.get("yellow") as string;
 
-        case participantStatus.stage_stopped_warning:
-          return markers.get("white") as string;
-
         case participantStatus.stage_sos:
           return markers.get("red") as string;
-
-        case participantStatus.stage_sos_viewer:
-          return markers.get("white") as string;
-
-        case participantStatus.stage_sos_ok:
-          return markers.get("green") as string;
-
-        case participantStatus.stage_sos_ok_viewer:
-          return markers.get("white") as string;
-
-        case participantStatus.unknown:
+        default:
           return markers.get("gray") as string;
       }
 
@@ -1088,7 +1011,7 @@ const Rally: NextPage<EventProps> = (props) => {
       setZoom(z);
     }
   };
-  
+
   const onParticipantMarkerClick = (id: number) => {
     //console.log("CLICK FROM MAIN>> ON PARTICIPANT ID: ", id);
     const part = ppTrackerClient.rallyParticipantsById
@@ -1103,39 +1026,40 @@ const Rally: NextPage<EventProps> = (props) => {
       //centerMapOnParticipantNumber(p);
     }
   };
-const [SosrallyAlerts, setSosrallyAlerts] = useState<rallyAlert[]>([]);
+  const [SosrallyAlerts, setSosrallyAlerts] = useState<rallyAlert[]>([]);
 
-const hasFilteredAlerts = () => {        
-  const filteredAlerts = rallyAlerts.filter((alert) => {
-    if ("ack_time" in alert.alert && "end_time" in alert.alert) {
-      // alert es de tipo apiSosAlertMerge
-      return !alert.alert.ack_time && !alert.alert.end_time;
+  const hasFilteredAlerts = () => {
+    const filteredAlerts = rallyAlerts.filter((alert) => {
+      if ("ack_time" in alert.alert && "end_time" in alert.alert) {
+        // alert es de tipo apiSosAlertMerge
+        return !alert.alert.ack_time && !alert.alert.end_time;
+      }
+      return false; // Si alert no es de tipo apiSosAlertMerge, incluir en los resultados
+    });
+
+    // Compara las alertas filtradas con SosrallyAlerts
+    const areAlertsEqual =
+      JSON.stringify(filteredAlerts) === JSON.stringify(SosrallyAlerts);
+
+    if (!areAlertsEqual) {
+      // Si las alertas no son iguales, actualiza SosrallyAlerts y retorna true
+      setSosrallyAlerts(filteredAlerts);
+      return true;
     }
-    return false; // Si alert no es de tipo apiSosAlertMerge, incluir en los resultados
-  });
 
-  // Compara las alertas filtradas con SosrallyAlerts
-  const areAlertsEqual = JSON.stringify(filteredAlerts) === JSON.stringify(SosrallyAlerts);
+    // Si las alertas son iguales, retorna false
+    return false;
+  };
 
-  if (!areAlertsEqual) {
-    // Si las alertas no son iguales, actualiza SosrallyAlerts y retorna true
-    setSosrallyAlerts(filteredAlerts);
-    return true;
-  }
+  const [alertsExist, setalertsExist] = useState(false);
 
-  // Si las alertas son iguales, retorna false
-  return false;
-};
-
-const [alertsExist, setalertsExist] = useState(false);
-
-useEffect(() => {
-  if (hasFilteredAlerts()) {
-    setalertsExist(true);
-    setShowAlertsBar(true);      
-  }
-}, [rallyAlerts]);
-  //const alertsExist = hasFilteredAlerts(); 
+  useEffect(() => {
+    if (hasFilteredAlerts()) {
+      setalertsExist(true);
+      setShowAlertsBar(true);
+    }
+  }, [rallyAlerts]);
+  //const alertsExist = hasFilteredAlerts();
 
   useEffect(() => {
     updateMapSize();
@@ -1159,7 +1083,13 @@ useEffect(() => {
         ></input>
         <Container fluid style={{ height: "100%" }}>
           <CurrentEventBar
-            userIsAdmin={props.userProfile && (props.userProfile.role === "Race Control Operator" || "Race Control Viewer") ? true : false}
+            userIsAdmin={
+              props.userProfile &&
+              (props.userProfile.role === "Race Control Operator" ||
+                "Race Control Viewer")
+                ? true
+                : false
+            }
             event={activeEvent}
             rally={rally}
             onChangeRallyClick={onChangeRallyClick}
@@ -1202,7 +1132,13 @@ useEffect(() => {
             {showStageDetails ? (
               <Col xs="12" sm="12" md="4" lg="2" xl="2" style={verticalDivider}>
                 <StageDetails
-                  userIsAdmin={props.userProfile && (props.userProfile.role === "Race Control Operator" || "Race Control Viewer") ? true : false}
+                  userIsAdmin={
+                    props.userProfile &&
+                    (props.userProfile.role === "Race Control Operator" ||
+                      "Race Control Viewer")
+                      ? true
+                      : false
+                  }
                   waypointRef={stageWaypointRef}
                   rally={rally}
                   stage={selectedStage}
@@ -1213,7 +1149,7 @@ useEffect(() => {
                   onStageClosed={onStageClosed}
                   onStageStatus={onStageStatus}
                   stageStatuses={stageStatuses}
-                  user={props.user}
+                  userProfile={props.userProfile}
                 />
               </Col>
             ) : (
@@ -1228,7 +1164,13 @@ useEffect(() => {
                   participant={selectedParticipant}
                   onHide={onParticipantHide}
                   onCenter={onParticipantCenterMap}
-                  userIsAdmin={props.userProfile && (props.userProfile.role === "Race Control Operator" || "Race Control Viewer") ? true : false}
+                  userIsAdmin={
+                    props.userProfile &&
+                    (props.userProfile.role === "Race Control Operator" ||
+                      "Race Control Viewer")
+                      ? true
+                      : false
+                  }
                   rally={rally}
                   ppTrackerClient={ppTrackerClient}
                 />
@@ -1244,7 +1186,13 @@ useEffect(() => {
                   officialCar={selectedOfficialCar}
                   onHide={onOfficialCarHide}
                   onCenter={onOfficialCarCenterMap}
-                  userIsAdmin={props.userProfile && (props.userProfile.role === "Race Control Operator" || "Race Control Viewer") ? true : false}
+                  userIsAdmin={
+                    props.userProfile &&
+                    (props.userProfile.role === "Race Control Operator" ||
+                      "Race Control Viewer")
+                      ? true
+                      : false
+                  }
                   rally={rally}
                   ppTrackerClient={ppTrackerClient}
                 />
@@ -1325,7 +1273,11 @@ useEffect(() => {
                         title={p.number}
                         label={{
                           fontSize: "18px",
-                          color: getParticipantMarkerTextColorByStatus(p),
+                          color: getParticipantTextColor(
+                            p,
+                            rallyStages,
+                            props.user !== null ? props.user : undefined
+                          ),
                           fontWeight: "bold",
                           text: p.number,
                         }}
@@ -1366,10 +1318,11 @@ useEffect(() => {
               {/* Basic form for controlling center and zoom of map. */}
               {/*form*/}
             </Col>
-            {profile &&  //alertas
+
+            {profile && //alertas
             ((profile && profile.role === "Race Control Operator") ||
               profile.role === "Race Control Viewer") &&
-            (showAlertsBar ) ? (
+            showAlertsBar ? (
               <Col
                 xs="12"
                 sm="12"
@@ -1383,10 +1336,7 @@ useEffect(() => {
                 {alertsExist &&
                   ((profile && profile.role === "Race Control Operator") ||
                     profile.role === "Race Control Viewer") && (
-                    <div
-                      className="mb-2"
-                      style={{ height: "400px", overflow: "auto" }}
-                    >
+                    <div className="mb-2" style={{ height: "250px" }}>
                       <AlertsResume2 // alertas siempre
                         event={activeEvent}
                         maxHeight={contentHeight}
@@ -1401,7 +1351,7 @@ useEffect(() => {
                     </div>
                   )}
 
-                {showAlertsBar && (//alertas
+                {showAlertsBar && ( //alertas
                   <AlertsResume
                     event={activeEvent}
                     maxHeight={contentHeight}
@@ -1618,4 +1568,3 @@ export default Rally;
 function updateAlerts(rallyId: any) {
   throw new Error("Function not implemented.");
 }
-

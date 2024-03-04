@@ -61,30 +61,27 @@ const MessageComponent: React.FC<messageAlertProps> = (props) => {
 
   return (
     <tr>
-      <td>
-        <Image
-          src={iconUrl}
-          alt="Message"
-          height={35}
-          width={35}
-        />
+      <td className="m-0 px-3 pt-2- pb-0">
+        <Image src={iconUrl} alt="Message" height={35} width={35} />
       </td>
       <td>
-      <Button
+        <Button
           onClick={() =>
             props.onParticipantClick(
               getParticipantIdNumber(BigInt(props.message.participant))
             )
           }
-          className={`py-0 px-1`}
+          className={
+            "py-0 px-1 link-info link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"
+          }
           size="sm"
-          variant="success"
           type="button"
+          variant="link"
           // style={{ border: "none", background: "none", color: "white", width: "100%", height: "100%"}}
         >
-        {getParticipantIdNumber(BigInt(props.message.participant))}
+          {getParticipantIdNumber(BigInt(props.message.participant))}
         </Button>
-        </td>
+      </td>
       <td>
         {millisToCurrentDate(
           props.message.message_time,

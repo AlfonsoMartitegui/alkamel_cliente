@@ -476,6 +476,7 @@ model promoter {
   slug                       String?                      @db.VarChar(255)
   website_url                String?                      @db.VarChar(255)
   active                     Int?                         @default(0) @db.TinyInt
+  logo                       String?                      @default("") @db.VarChar(255)
   event                      event[]
   promoter_has_championships promoter_has_championships[]
   promoter_has_pptracker     promoter_has_pptracker[]
@@ -549,13 +550,12 @@ model rally {
   show_waypoints_on_viewers      Int?                     @default(0) @db.TinyInt
   allow_red_flag                 Int?                     @default(1) @db.TinyInt
   tiny_incidences_frequency      Int                      @default(10) @db.SmallInt
-  alert_icons_id                 BigInt
-  waypoints_icons_id             BigInt
-  waypoint_icons_width           Int
+  alert_icons_id                 BigInt                   @default(1)
+  waypoints_icons_id             BigInt                   @default(1)
+  waypoint_icons_width           Int                      @default(25)
   alert_icon_set                 alert_icon_set           @relation(fields: [alert_icons_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_alert_icons")
   event                          event                    @relation(fields: [event_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rally_event")
   rally_type_rallyTorally_type   rally_type               @relation(fields: [rally_type], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rally_type")
-  season                         season?                  @relation(fields: [season_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rally_season1")
   waypoint_icon_set              waypoint_icon_set        @relation(fields: [waypoints_icons_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_waypoints_icons")
   backtrack_alert                backtrack_alert[]
   event_has_rallies              event_has_rallies[]
@@ -572,7 +572,6 @@ model rally {
 
   @@index([alert_icons_id], map: "fk_alert_icons_idx")
   @@index([event_id], map: "fk_rally_event1_idx")
-  @@index([season_id], map: "fk_rally_season1_idx")
   @@index([rally_type], map: "fk_rally_type_idx")
   @@index([waypoints_icons_id], map: "fk_waypoints_icons_idx")
 }
@@ -616,7 +615,6 @@ model season {
   slug            String       @db.VarChar(255)
   championship_id BigInt
   championship    championship @relation(fields: [championship_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_season_championship1")
-  rally           rally[]
 
   @@index([championship_id], map: "fk_season_championship1_idx")
 }
@@ -971,7 +969,7 @@ model waypoint_types {
   default_outer_radio      Int                       @default(100)
   default_apperture        BigInt?                   @default(0)
   default_mandatory        Int                       @default(1)
-  waypoint_apperture_types waypoint_apperture_types? @relation(fields: [default_apperture], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_waypoint_apperture")
+  waypoint_apperture_types waypoint_apperture_types? @relation(fields: [default_apperture], references: [id], onUpdate: NoAction, map: "fk_waypoint_apperture")
   track_waypoints          track_waypoints[]
   waypoint                 waypoint[]
 
@@ -1105,7 +1103,7 @@ model alert_icon_set {
 
 model alert_types {
   id   BigInt @id @default(autoincrement())
-  name String @db.VarChar(245)
+  name String @default("") @db.VarChar(245)
 }
 
 model application_settings {
@@ -1158,10 +1156,10 @@ model promoter_has_pptracker {
   promoter_id          BigInt
   pptracker_id         BigInt               @id
   pptracker_shortcodes pptracker_shortcodes @relation(fields: [pptracker_id], references: [pptracker_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pptracker_id")
-  promoter             promoter             @relation(fields: [promoter_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "pptracker_promoter")
+  promoter             promoter             @relation(fields: [promoter_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_promoter_id")
 
   @@index([pptracker_id], map: "fk_pptracker_id_idx")
-  @@index([promoter_id], map: "pptracker_promoter_idx")
+  @@index([promoter_id], map: "fk_promoter_id_idx")
 }
 
 model waypoint_apperture_types {
@@ -1175,4 +1173,10 @@ model waypoint_icon_set {
   name                 String                 @default("") @db.VarChar(245)
   application_settings application_settings[]
   rally                rally[]
+}
+
+model api_endpoints_limits {
+  id       Int     @id @default(autoincrement())
+  endPoint String? @db.VarChar(145)
+  limit    Int?
 }

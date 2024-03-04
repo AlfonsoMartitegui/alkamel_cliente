@@ -2,7 +2,10 @@ import { Fragment } from "react";
 import React from "react";
 import { Button, Row, Col } from "react-bootstrap";
 import {
+  getParticipantBackgroundColor,
+  getParticipantBorderColor,
   getParticipantStatus,
+  getParticipantTextColor,
   participantInfo,
   participantStatus,
   rallyInfo,
@@ -43,53 +46,6 @@ interface EntryListBarProps {
     | undefined;
 }
 
-const getParticipantStatusVariant = (
-  p: participantInfo,
-  stages: Map<bigint, stage>,
-  user:
-    | (DefaultUser & {
-        id: string;
-        role: string;
-      })
-    | undefined
-) => {
-  const st = getParticipantStatus(p, stages, user);
-  switch (st) {
-    case participantStatus.transport_disconnected:
-      return "secondary text-warning";
-    case participantStatus.transport_moving:
-      return "dark text-light border border-light";
-
-    case participantStatus.transport_stopped:
-      return "secondary";
-
-    case participantStatus.stage_moving:
-      return "light";
-
-    case participantStatus.stage_stopped:
-      return "warning";
-
-    case participantStatus.stage_stopped_warning:
-      return "light text-warninig";
-
-    case participantStatus.stage_sos:
-      return "danger";
-
-    case participantStatus.stage_sos_viewer:
-      return "light";
-
-    case participantStatus.stage_sos_ok:
-      return "success";
-
-    case participantStatus.stage_sos_ok_viewer:
-      return "light";
-
-    case participantStatus.unknown:
-      return "secondary text-dark";
-  }
-  return "secondary";
-};
-
 const EntryListBar: React.FC<EntryListBarProps> = (props) => {
   let rallyStages = new Map<bigint, stage>();
   if (props.rally) {
@@ -116,12 +72,18 @@ const EntryListBar: React.FC<EntryListBarProps> = (props) => {
               <Button
                 key={p.number}
                 id={p.number}
-                variant={getParticipantStatusVariant(
-                  p,
-                  rallyStages,
-                  props.user
-                )}
                 className="fw-bold py-0 px-1 mt-0 mb-1 ms-1 me-0"
+                style={{
+                  backgroundColor: getParticipantBackgroundColor(
+                    p,
+                    rallyStages,
+                    props.user
+                  ),
+                  color: getParticipantTextColor(p, rallyStages, props.user),
+                  border:
+                    "2px solid " +
+                    getParticipantBorderColor(p, rallyStages, props.user), // Cambia el color y el ancho del borde
+                }}
                 onClick={props.onParticipantClick}
               >
                 {p.number}

@@ -173,7 +173,7 @@ const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
 
   return (
     <tr>
-      <td>{getSosTypeAsString(props.alert)}</td>
+      <td className="m-0 px-3 pt-2- pb-0">{getSosTypeAsString(props.alert)}</td>
       {/* <td>{getParticipantIdNumber(BigInt(props.alert.participant))}</td> */}
       <td>
         <Button
@@ -182,11 +182,12 @@ const SosAlertComponent: React.FC<sosAlertComponentProps> = (props) => {
               getParticipantIdNumber(BigInt(props.alert.participant))
             )
           }
-          className={`py-0 px-1`}
+          className={
+            "py-0 px-1 link-info link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"
+          }
           size="sm"
-          variant="danger"
           type="button"
-          // style={{ border: "none", background: "none", color: "white", width: "100%", height: "100%"}}
+          variant="link"
         >
           {getParticipantIdNumber(BigInt(props.alert.participant))}
         </Button>

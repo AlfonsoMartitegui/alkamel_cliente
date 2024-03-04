@@ -95,7 +95,9 @@ const FlagAlertComponent: React.FC<flagAlertProps> = (props) => {
 
   return (
     <tr>
-      <td>{getFlagTypeAsString(props.alert)}</td>
+      <td className="m-0 px-3 pt-2- pb-0">
+        {getFlagTypeAsString(props.alert)}
+      </td>
       <td></td>
       <td>
         {millisToCurrentDate(

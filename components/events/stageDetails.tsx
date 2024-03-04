@@ -18,12 +18,11 @@ interface StageProps {
   onStageClosed: (closed: number) => void;
   onStageStatus: (newStatus: number) => void;
   userIsAdmin?: boolean;
-  user:
-    | (DefaultUser & {
-        id: string;
-        role: string;
-      })
-    | null;
+  userProfile: {
+    id: number;
+    roleid: number;
+    role: string;
+  };
   stageStatuses: stage_statuses[];
 }
 
@@ -50,6 +49,7 @@ const ParticipantDetails: React.FC<StageProps> = (props) => {
 
   const stage = props.stage;
   if (stage == undefined) return <Fragment></Fragment>;
+
   return (
     <Fragment>
       <input
@@ -80,9 +80,13 @@ const ParticipantDetails: React.FC<StageProps> = (props) => {
         </Col>
       </Row>
 
-      {props.user && props.user.role === "rc_operator" && props.rally && (
-        <Fragment>
-          {/* <Row className="my-2">
+      <div>Current Profile is .... {props.userProfile.role}</div>
+
+      {props.userProfile &&
+        props.userProfile.role === "Race Control Operator" &&
+        props.rally && (
+          <Fragment>
+            {/* <Row className="my-2">
             <Col className="col-auto">Status:</Col>
             <Col>
               <Form.Select
@@ -104,34 +108,32 @@ const ParticipantDetails: React.FC<StageProps> = (props) => {
               </Form.Select>
             </Col>
           </Row> */}
-          <Row className="my-2">
-            <Col className="col-auto">Closed:</Col>
-            <Col>
-              <Form.Select
-                size="sm"
-                className="mb-2"
-                id="stageClosed"
-                ref={stageIsCloseRef}
-                value={props.stage?.is_closed}
-                onChange={stageClosedChange}
-              >
-                <option key={1} value={1}>
-                  YES
-                </option>
-                <option key={0} value={0}>
-                  NO
-                </option>
-              </Form.Select>
-            </Col>
-          </Row>
-        </Fragment>
-      )}
-
+            <Row className="my-2">
+              <Col className="col-auto">Closed:</Col>
+              <Col>
+                <Form.Select
+                  size="sm"
+                  className="mb-2"
+                  id="stageClosed"
+                  ref={stageIsCloseRef}
+                  value={props.stage?.is_closed}
+                  onChange={stageClosedChange}
+                >
+                  <option key={1} value={1}>
+                    YES
+                  </option>
+                  <option key={0} value={0}>
+                    NO
+                  </option>
+                </Form.Select>
+              </Col>
+            </Row>
+          </Fragment>
+        )}
       <Row className="my-2">
         <Col className="col-auto">Distance:</Col>
         <Col>{stage.distance}</Col>
       </Row>
-
       <Row className="my-2">
         <Col className="col-auto">First Car At:</Col>
         <Col>{stage.first_car_at}</Col>
@@ -140,8 +142,8 @@ const ParticipantDetails: React.FC<StageProps> = (props) => {
         <hr className="p-0 my-2" />
       </Row>
 
-      {props.user &&
-      props.user.role === "rc_operator" &&
+      {props.userProfile &&
+      props.userProfile.role === "Race Control Operator" &&
       props.rally &&
       props.rally.allow_red_flag &&
       (Number(stage.stage_type_id) === 2 ||

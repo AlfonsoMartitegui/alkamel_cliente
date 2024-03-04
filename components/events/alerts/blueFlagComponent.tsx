@@ -66,13 +66,8 @@ const BlueFlagComponent: React.FC<blueFlagProps> = (props) => {
 
   return (
     <tr>
-      <td>
-        <Image
-          src={iconUrl}
-          alt="Overspeeding"
-          height={35}
-          width={35}
-        />
+      <td className="m-0 px-3 pt-2- pb-0">
+        <Image src={iconUrl} alt="Overspeeding" height={35} width={35} />
       </td>
       <td>
         <Row>

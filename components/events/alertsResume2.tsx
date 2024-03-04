@@ -126,7 +126,7 @@ const AlertsResume2: React.FC<AlertResumeProps> = (props) => {
   // };
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(3);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -161,7 +161,7 @@ const AlertsResume2: React.FC<AlertResumeProps> = (props) => {
   return (
     <Fragment>
       <Row id="alertsTitle" className="bg-secondary p-1 fw-bold mx-0 px-0">
-        <Col className="pt-1 mt-2 fs-5">ALERTS</Col>
+        <Col className="pt-1 mt-2 fs-5">RESPONSE REQUIRED</Col>
         <Col className=" col-auto text-end pe-0 ps-1">
           {/* <Button
             variant="secondary-50"
@@ -213,23 +213,34 @@ const AlertsResume2: React.FC<AlertResumeProps> = (props) => {
           </tbody>
         </Table>
         <div>
-          <Pagination className="justify-content-center">
-            <Pagination.Prev
-              onClick={() =>
-                setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
-              }
-            />
-            <Pagination.Item>{currentPage}</Pagination.Item>
-            <Pagination.Next
-              onClick={() =>
-                setCurrentPage(
-                  currentPage < Math.ceil(filteredAlerts.length / itemsPerPage)
-                    ? currentPage + 1
-                    : currentPage
-                )
-              }
-            />
-          </Pagination>
+          {filteredAlerts.length > 3 && (
+            <Pagination className="justify-content-center">
+              <Pagination.First onClick={() => setCurrentPage(1)} />
+              <Pagination.Prev
+                onClick={() =>
+                  setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
+                }
+              />
+              <Pagination.Item>{currentPage}</Pagination.Item>
+              <Pagination.Next
+                onClick={() =>
+                  setCurrentPage(
+                    currentPage <
+                      Math.ceil(filteredAlerts.length / itemsPerPage)
+                      ? currentPage + 1
+                      : currentPage
+                  )
+                }
+              />
+              <Pagination.Last
+                onClick={() =>
+                  setCurrentPage(
+                    Math.ceil(filteredAlerts.length / itemsPerPage)
+                  )
+                }
+              />
+            </Pagination>
+          )}
         </div>
         {/* {showFilters && (
           <FiltersComponent

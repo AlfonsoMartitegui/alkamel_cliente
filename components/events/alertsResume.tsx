@@ -206,7 +206,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
   const [endTimeFilter, setEndTimeFilter] = React.useState<string>("");
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(50);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -512,19 +512,29 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
       filteredItems = filteredItems.filter((item) => {
         if (item.alertType === 1) {
           const sos = item.alert as apiSosAlertMerge;
-          return stagesFilter.some((stage) => stage.value === sos.stage_id.toString());
+          return stagesFilter.some(
+            (stage) => stage.value === sos.stage_id.toString()
+          );
         } else if (item.alertType === 2) {
           const flag = item.alert as flagAlert;
-          return stagesFilter.some((stage) => stage.value === flag.stage_id.toString());
+          return stagesFilter.some(
+            (stage) => stage.value === flag.stage_id.toString()
+          );
         } else if (item.alertType === 3) {
           const incidence = item.alert as apiIncidence;
-          return stagesFilter.some((stage) => stage.value === incidence.stageId.toString());
+          return stagesFilter.some(
+            (stage) => stage.value === incidence.stageId.toString()
+          );
         } else if (item.alertType === 4) {
           const message = item.alert as apiMessage;
-          return stagesFilter.some((stage) => stage.value === message.stage_id.toString());
+          return stagesFilter.some(
+            (stage) => stage.value === message.stage_id.toString()
+          );
         } else if (item.alertType === 5) {
           const blueFlag = item.alert as apiBlueFlag;
-          return stagesFilter.some((stage) => stage.value === blueFlag.stage_id.toString());
+          return stagesFilter.some(
+            (stage) => stage.value === blueFlag.stage_id.toString()
+          );
         } else return true;
       });
     }
@@ -537,7 +547,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
       });
     }
 
-    if(endTimeFilter !== "") {
+    if (endTimeFilter !== "") {
       filteredItems = filteredItems.filter((item) => {
         const date = new Date(item.time);
         const endTime = new Date(endTimeFilter).getTime();
@@ -617,7 +627,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
           hover
           responsive
           variant="dark"
-          className="m-0 p-0 mb-2"
+          className="m-0 p-0"
         >
           <thead>
             <tr>
@@ -627,7 +637,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
               <th>Details</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="m-0 p-0">
             {currentItems.map((p, index) => (
               <Fragment key={index}>
                 {p.alertType === 1 && (
@@ -693,6 +703,7 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
         </Table>
         <div>
           <Pagination className="justify-content-center">
+            <Pagination.First onClick={() => setCurrentPage(1)} />
             <Pagination.Prev
               onClick={() =>
                 setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
@@ -706,6 +717,11 @@ const AlertsResume: React.FC<AlertResumeProps> = (props) => {
                     ? currentPage + 1
                     : currentPage
                 )
+              }
+            />
+            <Pagination.Last
+              onClick={() =>
+                setCurrentPage(Math.ceil(totalItems / itemsPerPage))
               }
             />
           </Pagination>
